@@ -4,7 +4,7 @@
 **build.gradle**
 
     plugins {
-        id "org.nosphere.apache.rat" version "0.1.0
+        id "org.nosphere.apache.rat" version "0.1.1"
     }
 
     rat {
