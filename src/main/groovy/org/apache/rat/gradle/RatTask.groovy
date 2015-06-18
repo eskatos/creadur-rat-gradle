@@ -52,7 +52,7 @@ class RatTask extends DefaultTask {
         def errorCount = countUnaprovedUnknownLicenses()
         generateHtmlReport()
         if( failOnError && errorCount > 0 ) {
-            throw new GradleException( "Found $errorCount files with unapproved/unknown licenses." )
+            throw new GradleException( "Found $errorCount files with unapproved/unknown licenses. See $htmlReport" )
         }
     }
 
