@@ -40,28 +40,28 @@ class RatTask extends DefaultTask {
     @OutputDirectory
     File reportDir = project.file( 'build/reports/rat' )
 
-    def xmlReport = new File( reportDir , 'rat-report.xml' ).absolutePath
-    def htmlReport = new File( reportDir, 'index.html' ).absolutePath
-
     @TaskAction
     def rat() {
         if( !reportDir.exists() ) {
             reportDir.mkdirs()
         }
-        generateXmlReport()
-        def errorCount = countUnaprovedUnknownLicenses()
-        generateHtmlReport()
+        def xmlReport = generateXmlReport()
+        def errorCount = countUnaprovedUnknownLicenses( xmlReport )
+        def htmlReport = generateHtmlReport( xmlReport )
         if( failOnError && errorCount > 0 ) {
-            throw new GradleException( "Found $errorCount files with unapproved/unknown licenses. See $htmlReport" )
+            throw new GradleException(
+                "Found $errorCount files with unapproved/unknown licenses. See ${htmlReport.toURI()}"
+            )
         }
     }
 
     def generateXmlReport() {
+        def xmlReport = new File( reportDir , 'rat-report.xml' )
         def antBuilder = services.get( IsolatedAntBuilder )
         def ratClasspath = project.configurations.rat
         antBuilder.withClasspath( ratClasspath ).execute {
             ant.taskdef( resource: 'org/apache/rat/anttasks/antlib.xml' )
-            ant.report( format: 'xml', reportFile: xmlReport ) {
+            ant.report( format: 'xml', reportFile: xmlReport.absolutePath ) {
                 fileset( dir: inputDir.absolutePath ) {
                     patternset {
                         excludes.each { exclude( name: it ) }
@@ -69,10 +69,11 @@ class RatTask extends DefaultTask {
                 }
             }
         }
-        project.logger.info "Rat XML report: $xmlReport"
+        project.logger.info "Rat XML report: ${xmlReport.toURI()}"
+        return xmlReport
     }
 
-    def countUnaprovedUnknownLicenses() {
+    def countUnaprovedUnknownLicenses( xmlReport ) {
         def ratXml = new XmlParser().parse( xmlReport )
         def errorCount = 0
         ratXml.resource.each { resource ->
@@ -86,7 +87,8 @@ class RatTask extends DefaultTask {
         return errorCount
     }
 
-    def generateHtmlReport() {
+    def generateHtmlReport( xmlReport ) {
+        def htmlReport = new File( reportDir, 'index.html' )
         def stylesheet = project.file( 'build/tmp/rat/stylesheet.xsl' )
         stylesheet.parentFile.mkdirs()
         stylesheet.text = this.getClass().getResource( 'apache-rat-output-to-html.xsl' ).text
@@ -94,13 +96,14 @@ class RatTask extends DefaultTask {
         def ratClasspath = project.configurations.rat
         antBuilder.withClasspath( ratClasspath ).execute {
             ant.xslt(
-                in: xmlReport,
+                in: xmlReport.absolutePath,
                 style: stylesheet.absolutePath,
-                out: htmlReport,
+                out: htmlReport.absolutePath,
                 classpath: ratClasspath
             )
         }
-        project.logger.info "Rat HTML report: $htmlReport"
+        project.logger.info "Rat HTML report: ${htmlReport.toURI()}"
+        return htmlReport
     }
 
 }

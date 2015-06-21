@@ -12,6 +12,9 @@
         // Input directory, defaults to the project's root directory
         inputDir = project.file( 'some/path' )
 
+        // XML and HTML reports directory, defaults to 'build/reports/rat'
+        reportDir = project.file( 'some/other/path' )
+
         // List of exclude directives, defaults to none
         excludes = [ '**/build/**' ]
 
@@ -24,5 +27,4 @@
 
     gradle rat
 
-XML and HTML reports are outputed in `build/reports/rat`.
 If the project has a `check` task, the `rat` task is automatically registered as dependent on the former.

@@ -101,4 +101,31 @@ class RatIntegrationSpec extends IntegrationSpec {
         fileExists( 'build/reports/rat/index.html' )
     }
 
+    def 'success on custom reportPath'() {
+        setup:
+        fork = true
+        buildFile << '''
+            apply plugin: 'java'
+            apply plugin: 'org.nosphere.apache.rat'
+            rat {
+                verbose = true
+                excludes = [
+                    'build.gradle', 'settings.gradle', '**/build/**',
+                    '**/.gradle/**', '.gradle-test-kit/**',
+                    'no-license-file.txt'
+                ]
+                reportDir = file( 'build/reports/rat-custom' )
+            }
+        '''.stripIndent()
+        createFile( 'no-license-file.txt' ).text = 'Nothing here.'
+
+        when:
+        ExecutionResult result = runTasksSuccessfully( 'check' )
+
+        then:
+        wasExecuted( 'rat' )
+        fileExists( 'build/reports/rat-custom/rat-report.xml' )
+        fileExists( 'build/reports/rat-custom/index.html' )
+    }
+
 }
