@@ -9,13 +9,13 @@
 
     rat {
 
-        // Input directory, defaults to the project's root directory
-        inputDir = project.file( 'some/path' )
+        // Input directory, defaults to '.'
+        inputDir = 'some/path'
 
-        // XML and HTML reports directory, defaults to 'build/reports/rat'
+        // XML and HTML reports directory, defaults to project.buildDir + '/reports/rat'
         reportDir = project.file( 'some/other/path' )
 
-        // List of exclude directives, defaults to none
+        // List of exclude directives, defaults to ['**/.gradle/**']
         excludes = [ '**/build/**' ]
 
         // Fail the build on rat errors, defaults to true
