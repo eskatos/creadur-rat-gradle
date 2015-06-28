@@ -1,3 +1,7 @@
+.idea/
+*.ipr
+*.iws
+*.iml
 .gradle/
 .nb-gradle/
 build
