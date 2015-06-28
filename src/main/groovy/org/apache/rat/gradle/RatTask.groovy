@@ -21,7 +21,7 @@ package org.apache.rat.gradle
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.internal.project.IsolatedAntBuilder
@@ -31,14 +31,19 @@ class RatTask extends DefaultTask {
     boolean failOnError = true
     boolean verbose = false
 
-    @InputDirectory
-    File inputDir = project.file( '.' )
+    @Input
+    String inputDir = '.'
 
     @Input
-    List<String> excludes = []
+    List<String> excludes = ['**/.gradle/**']
 
     @OutputDirectory
-    File reportDir = project.file( 'build/reports/rat' )
+    File reportDir = project.file( project.buildDir.canonicalPath + '/reports/rat' )
+
+    @InputFiles
+    Set<File> getInputFiles() {
+        project.fileTree(dir: inputDir, excludes: excludes).files
+    }
 
     @TaskAction
     def rat() {
@@ -62,7 +67,7 @@ class RatTask extends DefaultTask {
         antBuilder.withClasspath( ratClasspath ).execute {
             ant.taskdef( resource: 'org/apache/rat/anttasks/antlib.xml' )
             ant.report( format: 'xml', reportFile: xmlReport.absolutePath ) {
-                fileset( dir: inputDir.absolutePath ) {
+                fileset( dir: inputDir ) {
                     patternset {
                         excludes.each { exclude( name: it ) }
                     }
@@ -89,7 +94,7 @@ class RatTask extends DefaultTask {
 
     def generateHtmlReport( xmlReport ) {
         def htmlReport = new File( reportDir, 'index.html' )
-        def stylesheet = project.file( 'build/tmp/rat/stylesheet.xsl' )
+        def stylesheet = project.file( project.buildDir.canonicalPath + '/tmp/rat/stylesheet.xsl' )
         stylesheet.parentFile.mkdirs()
         stylesheet.text = this.getClass().getResource( 'apache-rat-output-to-html.xsl' ).text
         def antBuilder = services.get( IsolatedAntBuilder )

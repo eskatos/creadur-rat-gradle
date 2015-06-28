@@ -29,18 +29,19 @@ class RatIntegrationSpec extends IntegrationSpec {
     def 'success'() {
         setup:
         fork = true
-        buildFile << '''
+        def inputDir = buildFile.parentFile.absolutePath.replaceAll('\\\\', '/')
+        buildFile << """
             apply plugin: 'java'
             apply plugin: 'org.nosphere.apache.rat'
             rat {
                 verbose = true
+                inputDir = '$inputDir'
                 excludes = [
-                    'build.gradle', 'settings.gradle', '**/build/**',
-                    '**/.gradle/**', '.gradle-test-kit/**',
+                    'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',
                     'no-license-file.txt'
                 ]
             }
-        '''.stripIndent()
+        """.stripIndent()
         createFile( 'no-license-file.txt' ).text = 'Nothing here.'
 
         when:
@@ -55,17 +56,18 @@ class RatIntegrationSpec extends IntegrationSpec {
     def 'do not fail but report errors when rat.failOnError is false'() {
         setup:
         fork = true
-        buildFile << '''
+        def inputDir = buildFile.parentFile.absolutePath.replaceAll('\\\\', '/')
+        buildFile << """
             apply plugin: 'org.nosphere.apache.rat'
             rat {
                 verbose = true
+                inputDir = '$inputDir'
                 failOnError = false
                 excludes = [
-                    'build.gradle', 'settings.gradle', '**/build/**',
-                    '**/.gradle/**', '.gradle-test-kit/**'
+                    'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
                 ]
             }
-        '''.stripIndent()
+        """.stripIndent()
         createFile( 'no-license-file.txt' ).text = 'Nothing here.'
 
         when:
@@ -77,19 +79,20 @@ class RatIntegrationSpec extends IntegrationSpec {
         fileExists( 'build/reports/rat/index.html' )
     }
 
-    def 'fail the build when finding a file with unaproved/unknown license'() {
+    def 'fail the build when finding a file with unapproved/unknown license'() {
         setup:
         fork = true
-        buildFile << '''
+        def inputDir = buildFile.parentFile.absolutePath.replaceAll('\\\\', '/')
+        buildFile << """
             apply plugin: 'org.nosphere.apache.rat'
             rat {
                 verbose = true
+                inputDir = '$inputDir'
                 excludes = [
-                    'build.gradle', 'settings.gradle', '**/build/**',
-                    '**/.gradle/**', '.gradle-test-kit/**'
+                    'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
                 ]
             }
-        '''.stripIndent()
+        """.stripIndent()
         createFile( 'no-license-file.txt' ).text = 'Nothing here.'
 
         when:
@@ -104,19 +107,20 @@ class RatIntegrationSpec extends IntegrationSpec {
     def 'success on custom reportPath'() {
         setup:
         fork = true
-        buildFile << '''
+        def inputDir = buildFile.parentFile.absolutePath.replaceAll('\\\\', '/')
+        buildFile << """
             apply plugin: 'java'
             apply plugin: 'org.nosphere.apache.rat'
             rat {
                 verbose = true
+                inputDir = '$inputDir'
                 excludes = [
-                    'build.gradle', 'settings.gradle', '**/build/**',
-                    '**/.gradle/**', '.gradle-test-kit/**',
+                    'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',
                     'no-license-file.txt'
                 ]
                 reportDir = file( 'build/reports/rat-custom' )
             }
-        '''.stripIndent()
+        """.stripIndent()
         createFile( 'no-license-file.txt' ).text = 'Nothing here.'
 
         when:
