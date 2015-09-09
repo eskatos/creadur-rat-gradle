@@ -4,7 +4,7 @@
 **build.gradle**
 
     plugins {
-        id "org.nosphere.apache.rat" version "0.1.3"
+        id "org.nosphere.apache.rat" version "0.2.0"
     }
 
     rat {
@@ -20,6 +20,17 @@
 
         // Fail the build on rat errors, defaults to true
         failOnError = false
+
+        // Enable XML RAT output, defaults to true
+        xmlOutput = true
+
+        // Enable HTML RAT output, defaults to true
+        htmlOutput = true
+
+        // Enable plain text RAT output, defaults to false
+        // Please note that if xml or html output is enabled too,
+        // then two RAT runs will be needed to produce all reports.
+        plainOutput = false
 
     }
 
