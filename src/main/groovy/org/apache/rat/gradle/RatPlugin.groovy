@@ -46,7 +46,7 @@ class RatPlugin implements Plugin<Project> {
             jcenter()
         }
         project.dependencies {
-            rat 'org.apache.rat:apache-rat-tasks:0.11'
+            rat 'org.apache.rat:apache-rat-tasks:0.12'
         }
     }
 }
