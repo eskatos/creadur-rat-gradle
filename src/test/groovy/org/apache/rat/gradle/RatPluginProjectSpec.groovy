@@ -25,6 +25,6 @@ import nebula.test.PluginProjectSpec
  */
 class RatPluginProjectSpec extends PluginProjectSpec {
     @Override
-    String getPluginName() { return 'org.apache.rat.gradle' }
+    String getPluginName() { return 'org.nosphere.apache.rat' }
 }
 
