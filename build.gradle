@@ -24,7 +24,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath "com.gradle.publish:plugin-publish-plugin:0.9.0"
+        classpath "com.gradle.publish:plugin-publish-plugin:0.9.4"
     }
 }
 
@@ -41,7 +41,7 @@ repositories {
 }
 
 dependencies {
-    testCompile 'com.netflix.nebula:nebula-test:2.2.1', {
+    testCompile 'com.netflix.nebula:nebula-test:4.2.2', {
         exclude module: 'groovy-all'
     }
 }
