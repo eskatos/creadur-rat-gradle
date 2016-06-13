@@ -34,6 +34,8 @@ plugins {
     id 'maven'
     id 'eclipse'
     id 'idea'
+    id 'org.nosphere.apache.rat' version '0.2.0'
+    id "org.nosphere.honker" version "0.2.2"
 }
 
 repositories {
@@ -48,6 +50,26 @@ dependencies {
 
 sourceCompatibility = "1.5"
 targetCompatibility = "1.5"
+
+sourceSets {
+    main {
+        output.dir( honkerGenDependencies.outputDir, builtBy: honkerGenDependencies )
+        output.dir( honkerGenLicense.outputDir, builtBy: honkerGenLicense )
+        output.dir( honkerGenNotice.outputDir, builtBy: honkerGenNotice )
+    }
+}
+honkerGenNotice { footer = 'This product includes software developed at\nThe Apache Software Foundation (http://www.apache.org/).\n' }
+honker.license = 'Apache 2'
+check.dependsOn honkerCheck
+
+rat {
+    excludes += [
+        'README.md',
+        '.gradletasknamecache', 'gradle/wrapper/**', 'gradlew*', 'build/**', // Gradle
+        '.nb-gradle/**', '*.iml', '*.ipr', '*.iws' // IDEs
+    ]
+}
+check.dependsOn rat
 
 apply plugin: "com.gradle.plugin-publish"
 pluginBundle {
