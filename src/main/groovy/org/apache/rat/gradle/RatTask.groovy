@@ -20,6 +20,7 @@ package org.apache.rat.gradle
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.tasks.Console
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
@@ -28,11 +29,16 @@ import org.gradle.api.internal.project.IsolatedAntBuilder
 
 class RatTask extends DefaultTask {
 
+    @Input
     boolean failOnError = true
+    @Console
     boolean verbose = false
 
+    @Input
     boolean xmlOutput = true
+    @Input
     boolean htmlOutput = true
+    @Input
     boolean plainOutput = false
 
     @Input

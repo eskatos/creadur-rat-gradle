@@ -48,9 +48,15 @@ class RatIntegrationSpec extends IntegrationSpec {
         ExecutionResult result = runTasksSuccessfully( 'check' )
 
         then:
-        wasExecuted( 'rat' )
+        result.wasExecuted( 'rat' )
         fileExists( 'build/reports/rat/rat-report.xml' )
         fileExists( 'build/reports/rat/index.html' )
+
+        when:
+        result = runTasksSuccessfully( 'check' )
+
+        then:
+        result.wasUpToDate( 'rat' )
     }
 
     def 'do not fail but report errors when rat.failOnError is false'() {
@@ -74,9 +80,15 @@ class RatIntegrationSpec extends IntegrationSpec {
         ExecutionResult result = runTasksSuccessfully( 'rat' )
 
         then:
-        wasExecuted( 'rat' )
+        result.wasExecuted( 'rat' )
         fileExists( 'build/reports/rat/rat-report.xml' )
         fileExists( 'build/reports/rat/index.html' )
+
+        when:
+        result = runTasksSuccessfully( 'rat' )
+
+        then:
+        result.wasUpToDate( 'rat' )
     }
 
     def 'fail the build when finding a file with unapproved/unknown license'() {
@@ -99,9 +111,15 @@ class RatIntegrationSpec extends IntegrationSpec {
         ExecutionResult result = runTasksWithFailure( 'rat' )
 
         then:
-        wasExecuted( 'rat' )
+        result.wasExecuted( 'rat' )
         fileExists( 'build/reports/rat/rat-report.xml' )
         fileExists( 'build/reports/rat/index.html' )
+
+        when:
+        result = runTasksWithFailure( 'rat' )
+
+        then:
+        result.wasExecuted( 'rat' )
     }
 
     def 'success on custom reportPath'() {
@@ -127,9 +145,15 @@ class RatIntegrationSpec extends IntegrationSpec {
         ExecutionResult result = runTasksSuccessfully( 'check' )
 
         then:
-        wasExecuted( 'rat' )
+        result.wasExecuted( 'rat' )
         fileExists( 'build/reports/rat-custom/rat-report.xml' )
         fileExists( 'build/reports/rat-custom/index.html' )
+
+        when:
+        result = runTasksSuccessfully( 'check' )
+
+        then:
+        result.wasUpToDate( 'rat' )
     }
 
     def 'success on only plain text report'() {
@@ -157,10 +181,16 @@ class RatIntegrationSpec extends IntegrationSpec {
         ExecutionResult result = runTasksSuccessfully( 'check' )
 
         then:
-        wasExecuted( 'rat' )
+        result.wasExecuted( 'rat' )
         fileExists( 'build/reports/rat/rat-report.txt' )
         !fileExists( 'build/reports/rat/rat-report.xml' )
         !fileExists( 'build/reports/rat/index.html' )
+
+        when:
+        result = runTasksSuccessfully( 'check' )
+
+        then:
+        result.wasUpToDate( 'rat' )
     }
 
     def 'fail the build when finding a file with unapproved/unknown license on plain text report only'() {
@@ -186,10 +216,16 @@ class RatIntegrationSpec extends IntegrationSpec {
         ExecutionResult result = runTasksWithFailure( 'rat' )
 
         then:
-        wasExecuted( 'rat' )
+        result.wasExecuted( 'rat' )
         fileExists( 'build/reports/rat/rat-report.txt' )
         !fileExists( 'build/reports/rat/rat-report.xml' )
         !fileExists( 'build/reports/rat/index.html' )
+
+        when:
+        result = runTasksWithFailure( 'rat' )
+
+        then:
+        result.wasExecuted( 'rat' )
     }
 
     def 'success on plain text and html report'() {
@@ -217,9 +253,15 @@ class RatIntegrationSpec extends IntegrationSpec {
         ExecutionResult result = runTasksSuccessfully( 'check' )
 
         then:
-        wasExecuted( 'rat' )
+        result.wasExecuted( 'rat' )
         fileExists( 'build/reports/rat/rat-report.txt' )
         !fileExists( 'build/reports/rat/rat-report.xml' )
         fileExists( 'build/reports/rat/index.html' )
+
+        when:
+        result = runTasksSuccessfully( 'check' )
+
+        then:
+        result.wasUpToDate( 'rat' )
     }
 }
