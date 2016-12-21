@@ -21,24 +21,14 @@ package org.apache.rat.gradle
 import groovy.transform.CompileStatic
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.plugins.JavaBasePlugin
 
 @CompileStatic
-class RatPlugin implements Plugin<Project>
+class BaseRatPlugin implements Plugin<Project>
 {
-  @Override
   void apply( Project project )
   {
-    project.plugins.apply BaseRatPlugin
-    Task ratTask = project.task(
-      'rat',
-      type: RatTask,
-      description: 'Runs Apache Rat checks'
-    )
-    if( project.plugins.hasPlugin( JavaBasePlugin ) )
-    {
-      project.tasks[ JavaBasePlugin.CHECK_TASK_NAME ].dependsOn ratTask
-    }
+    project.configurations.create 'rat'
+    project.repositories.jcenter()
+    project.dependencies.add 'rat', project.dependencies.create( 'org.apache.rat:apache-rat-tasks:0.12' )
   }
 }

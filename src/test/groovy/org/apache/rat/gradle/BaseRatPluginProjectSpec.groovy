@@ -18,27 +18,13 @@
  */
 package org.apache.rat.gradle
 
-import groovy.transform.CompileStatic
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.plugins.JavaBasePlugin
+import nebula.test.PluginProjectSpec
 
-@CompileStatic
-class RatPlugin implements Plugin<Project>
-{
-  @Override
-  void apply( Project project )
-  {
-    project.plugins.apply BaseRatPlugin
-    Task ratTask = project.task(
-      'rat',
-      type: RatTask,
-      description: 'Runs Apache Rat checks'
-    )
-    if( project.plugins.hasPlugin( JavaBasePlugin ) )
-    {
-      project.tasks[ JavaBasePlugin.CHECK_TASK_NAME ].dependsOn ratTask
-    }
-  }
+/**
+ * Rat PluginProjectSpec.
+ */
+class BaseRatPluginProjectSpec extends PluginProjectSpec {
+    @Override
+    String getPluginName() { return 'org.nosphere.apache.rat-base' }
 }
+
