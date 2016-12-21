@@ -34,8 +34,8 @@ plugins {
     id 'maven'
     id 'eclipse'
     id 'idea'
-    id 'org.nosphere.apache.rat' version '0.2.2'
-    id "org.nosphere.honker" version "0.2.2"
+    id 'org.nosphere.apache.rat' version '0.3.0'
+    id "org.nosphere.honker" version "0.3.0"
 }
 
 repositories {
