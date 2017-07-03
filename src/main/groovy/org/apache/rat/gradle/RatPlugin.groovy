@@ -38,7 +38,7 @@ class RatPlugin implements Plugin<Project>
     )
     if( project.plugins.hasPlugin( JavaBasePlugin ) )
     {
-      project.tasks[ JavaBasePlugin.CHECK_TASK_NAME ].dependsOn ratTask
+      project.tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME).dependsOn ratTask
     }
   }
 }
