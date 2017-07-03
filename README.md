@@ -39,3 +39,11 @@
     gradle rat
 
 If the project has a `check` task, the `rat` task is automatically registered as dependent on the former.
+
+
+**compatibility matrix**
+
+    Plugin version | Supported Gradle versions
+             0.1.0 | >=2.x
+             0.2.0 | >=2.x
+             0.3.0 | >=2.x
