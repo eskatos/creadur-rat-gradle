@@ -1,22 +1,22 @@
 
 # Apache RAT (Release Audit Tool) Gradle Plugin
 
-**build.gradle**
+**build.gradle(.kts)**
 
     plugins {
-        id "org.nosphere.apache.rat" version "0.3.0"
+        id("org.nosphere.apache.rat") version "0.3.0"
     }
 
     rat {
 
         // Input directory, defaults to '.'
-        inputDir = 'some/path'
+        inputDir = "some/path"
 
         // XML and HTML reports directory, defaults to project.buildDir + '/reports/rat'
-        reportDir = project.file( 'some/other/path' )
+        reportDir = project.file( "some/other/path" )
 
         // List of exclude directives, defaults to ['**/.gradle/**']
-        excludes = [ '**/build/**' ]
+        excludes = [ "**/build/**" ]
 
         // Fail the build on rat errors, defaults to true
         failOnError = false
