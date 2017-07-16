@@ -79,7 +79,10 @@ class RatTask extends DefaultTask
     {
       xmlReport = generateXmlReport()
       mainReport = mainReport ?: xmlReport
-      errorCount = countUnaprovedUnknownLicenses( xmlReport )
+      if( !plainOutput )
+      {
+        errorCount = countUnaprovedUnknownLicenses( xmlReport )
+      }
     }
     if( xmlReport != null && htmlOutput )
     {
