@@ -64,7 +64,7 @@ rat {
     excludes += [
         'README.md',
         '.gradletasknamecache', 'gradle/wrapper/**', 'gradlew*', 'build/**', // Gradle
-        '.nb-gradle/**', '*.iml', '*.ipr', '*.iws' // IDEs
+        '.nb-gradle/**', '*.iml', '*.ipr', '*.iws', '*.idea/**' // IDEs
     ]
 }
 check.dependsOn rat
