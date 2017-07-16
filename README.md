@@ -4,7 +4,7 @@
 **build.gradle(.kts)**
 
     plugins {
-        id("org.nosphere.apache.rat") version "0.3.0"
+        id("org.nosphere.apache.rat") version "0.3.1"
     }
 
     rat {
@@ -47,3 +47,4 @@ If the project has a `check` task, the `rat` task is automatically registered as
              0.1.0 | >=2.x
              0.2.0 | >=2.x
              0.3.0 | >=2.x
+             0.3.1 | >=2.x
