@@ -69,13 +69,11 @@ open class RatWork @Inject constructor(
 
         transformReport(xmlReportFile, htmlReportFile, plainReportFile)
 
-        val plainReport = plainReportFile.readText()
-
         if (stats.numUnApproved > 0) {
-            if (spec.failOnError) throw RatException("Apache Rat audit failure\n$plainReport")
-            else System.err.println(plainReport)
+            if (spec.failOnError) throw RatException("Apache Rat audit failure\n${plainReportFile.readText()}")
+            else System.err.println(plainReportFile.readText())
         } else if (spec.verbose) {
-            println(plainReport)
+            println(plainReportFile.readText())
         }
     }
 
@@ -128,14 +126,16 @@ class FilesReportable(
 
     private
     fun excludeFileFilter(): (File) -> Boolean {
-        val filter = createFilenameFilter()
+        val lines = excludeFile?.takeIf { it.isFile }?.readLines()?.filter { it.isNotBlank() }
+        if (lines.isNullOrEmpty()) return { true }
+        val filter = createFilenameFilter(lines)
         return { file -> filter.accept(file.parentFile, file.name) }
     }
 
     private
-    fun createFilenameFilter() =
+    fun createFilenameFilter(lines: List<String>) =
             Report::class.java.getDeclaredMethod("parseExclusions", List::class.java).run {
                 isAccessible = true
-                invoke(null, excludeFile?.readLines() ?: emptyList())
+                invoke(null, lines)
             } as FilenameFilter
 }
