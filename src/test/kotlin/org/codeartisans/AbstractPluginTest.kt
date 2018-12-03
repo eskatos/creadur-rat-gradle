@@ -20,7 +20,6 @@ package org.codeartisans
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
-import org.gradle.util.GradleVersion
 import org.junit.Before
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -37,7 +36,8 @@ abstract class AbstractPluginTest(
         @Parameterized.Parameters(name = "Gradle {0}")
         @JvmStatic
         fun testedGradleVersions() = listOf(
-                GradleVersion.current().version,
+                "5.0",
+                "4.10.2",
                 "4.10",
                 "4.9",
                 "4.8",
