@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("java-gradle-plugin")
-    id("groovy")
+    `kotlin-dsl`
     id("com.gradle.plugin-publish") version "0.10.0"
     id("org.nosphere.apache.rat") version "0.3.0"
     id("org.nosphere.honker") version "0.3.0"
@@ -30,14 +30,23 @@ repositories {
 }
 
 dependencies {
-    testCompile("com.netflix.nebula:nebula-test:7.1.0") {
-        exclude(module = "groovy-all")
-    }
+    compileOnly("org.apache.rat:apache-rat:0.13")
+
+    testImplementation("junit:junit:4.12")
+    testImplementation(gradleTestKit())
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_5
-    targetCompatibility = JavaVersion.VERSION_1_5
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        jvmTarget = "1.8"
+        languageVersion = "1.3"
+        apiVersion = "1.3"
+    }
 }
 
 sourceSets {
@@ -64,14 +73,5 @@ pluginBundle {
     website = "https://github.com/eskatos/creadur-rat-gradle"
     vcsUrl = "https://github.com/eskatos/creadur-rat-gradle"
     description = "Apache RAT (Release Audit Tool) Gradle Plugin"
-    tags = listOf("apache")
-
-    (plugins) {
-        register("ratPlugin") {
-            id = "org.nosphere.apache.rat"
-            displayName = "Apache RAT (Release Audit Tool) Gradle Plugin"
-            description = "Apache RAT (Release Audit Tool) Gradle Plugin"
-            tags = listOf("license")
-        }
-    }
+    tags = listOf("apache", "release-audit", "license")
 }

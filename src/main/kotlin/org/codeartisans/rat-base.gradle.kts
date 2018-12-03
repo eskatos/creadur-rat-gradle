@@ -16,29 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.rat.gradle
+package org.codeartisans
 
-import groovy.transform.CompileStatic
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.plugins.JavaBasePlugin
-
-@CompileStatic
-class RatPlugin implements Plugin<Project>
-{
-  @Override
-  void apply( Project project )
-  {
-    project.plugins.apply BaseRatPlugin
-    Task ratTask = project.task(
-      'rat',
-      type: RatTask,
-      description: 'Runs Apache Rat checks'
-    )
-    if( project.plugins.hasPlugin( JavaBasePlugin ) )
-    {
-      project.tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME).dependsOn ratTask
-    }
-  }
+plugins {
+    id("reporting-base")
 }

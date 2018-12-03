@@ -16,19 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.rat.gradle
+package org.codeartisans
 
-import groovy.transform.CompileStatic
-import org.gradle.api.Plugin
-import org.gradle.api.Project
+import org.codeartisans.rat.RatTask
 
-@CompileStatic
-class BaseRatPlugin implements Plugin<Project>
-{
-  void apply( Project project )
-  {
-    project.configurations.create 'rat'
-    project.repositories.jcenter()
-    project.dependencies.add 'rat', project.dependencies.create( 'org.apache.rat:apache-rat-tasks:0.12' )
-  }
+plugins {
+    id("org.codeartisans.rat-base")
+}
+
+val rat by tasks.registering(RatTask::class) {
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    description = "Runs Apache Rat audit tool"
+}
+
+plugins.withType(LifecycleBasePlugin::class.java) {
+    tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME) {
+        dependsOn(rat)
+    }
 }

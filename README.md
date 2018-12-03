@@ -4,34 +4,28 @@
 **build.gradle(.kts)**
 
     plugins {
-        id("org.nosphere.apache.rat") version "0.3.1"
+        id("org.codeartisans.rat") version "0.4.0"
     }
 
-    rat {
+    tasks.rat {
 
         // Input directory, defaults to '.'
-        inputDir = "some/path"
+        inputDir.set("some/path")
 
-        // XML and HTML reports directory, defaults to project.buildDir + '/reports/rat'
-        reportDir = project.file( "some/other/path" )
+        // List of Gradle exclude directives, defaults to ['**/.gradle/**']
+        excludes.add("**/build/**")
 
-        // List of exclude directives, defaults to ['**/.gradle/**']
-        excludes = [ "**/build/**" ]
+        // Rat excludes file, one directive per line
+        excludeFile.set(layout.projectDirectory.file(".rat-excludes.txt"))
+
+        // XML, TXT and HTML reports directory, defaults to 'build/reports/rat'
+        reportDir.set(file("some/other/path"))
+
+        // Custom XSL stylesheet for the HTML report
+        stylesheet.set(file("custom/rat-html-stylesheet.xsl")
 
         // Fail the build on rat errors, defaults to true
-        failOnError = false
-
-        // Enable XML RAT output, defaults to true
-        xmlOutput = true
-
-        // Enable HTML RAT output, defaults to true
-        htmlOutput = true
-
-        // Enable plain text RAT output, defaults to false
-        // Please note that if xml or html output is enabled too,
-        // then two RAT runs will be needed to produce all reports.
-        plainOutput = false
-
+        failOnError.set(false)
     }
 
 **command line**
@@ -48,3 +42,4 @@ If the project has a `check` task, the `rat` task is automatically registered as
              0.2.0 | >=2.x
              0.3.0 | >=2.x
              0.3.1 | >=2.x
+             0.4.0 | >=5.0
