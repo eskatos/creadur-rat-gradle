@@ -30,7 +30,7 @@ val rat by tasks.registering(RatTask::class) {
 }
 
 plugins.withType(LifecycleBasePlugin::class.java) {
-    tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME) {
+    tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure {
         dependsOn(rat)
     }
 }

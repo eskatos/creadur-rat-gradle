@@ -37,7 +37,8 @@ abstract class AbstractPluginTest(
         @Parameterized.Parameters(name = "Gradle {0}")
         @JvmStatic
         fun testedGradleVersions() = listOf(
-                GradleVersion.current().version
+                GradleVersion.current().version,
+                "4.10"
         )
     }
 

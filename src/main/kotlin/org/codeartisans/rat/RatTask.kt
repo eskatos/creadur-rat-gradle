@@ -41,22 +41,24 @@ open class RatTask @Inject constructor(
 ) : DefaultTask() {
 
     @Console
-    val verbose = project.objects.property<Boolean>()
-            .value(false)
+    val verbose = project.objects.property<Boolean>().apply {
+        set(false)
+    }
 
     @Input
-    val failOnError = project.objects.property<Boolean>()
-            .value(true)
+    val failOnError = project.objects.property<Boolean>().apply {
+        set(true)
+    }
 
     @Internal
-    val inputDir = project.objects.directoryProperty()
-            .value(project.layout.projectDirectory)
+    val inputDir = newInputDirectory().apply {
+        set(project.layout.projectDirectory)
+    }
 
     @Internal
-    val excludes = project.objects.listProperty<String>()
-            .empty().apply {
-                add("**/.gradle/**")
-            }
+    val excludes = project.objects.listProperty<String>().apply {
+        set(listOf("**/.gradle/**"))
+    }
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -71,15 +73,15 @@ open class RatTask @Inject constructor(
     @InputFile
     @Optional
     @PathSensitive(PathSensitivity.NONE)
-    val excludeFile = project.objects.fileProperty()
+    val excludeFile = newInputFile()
 
     @InputFile
     @Optional
     @PathSensitive(PathSensitivity.NONE)
-    val stylesheet = project.objects.fileProperty()
+    val stylesheet = newInputFile()
 
     @OutputDirectory
-    val reportDir = project.objects.directoryProperty().apply {
+    val reportDir = newOutputDirectory().apply {
         set(project.layout.projectDirectory.dir(project.provider {
             project.the<ReportingExtension>().file(name).canonicalPath
         }))
