@@ -17,4 +17,4 @@
  * under the License.
  */
 
-rootProject.name = 'creadur-rat-gradle'
+rootProject.name = "creadur-rat-gradle"
