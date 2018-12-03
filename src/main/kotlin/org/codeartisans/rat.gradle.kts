@@ -20,17 +20,36 @@ package org.codeartisans
 
 import org.codeartisans.rat.RatTask
 
+import org.gradle.util.GradleVersion
+
+
 plugins {
     id("org.codeartisans.rat-base")
 }
 
-val rat = tasks.register("rat", RatTask::class) {
+
+val ratTaskConfiguration: RatTask.() -> Unit = {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs Apache Rat audit tool"
 }
 
-plugins.withType(LifecycleBasePlugin::class.java) {
-    tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure {
-        dependsOn(rat)
+
+if (GradleVersion.current() >= GradleVersion.version("4.9")) {
+
+    val rat = tasks.register("rat", RatTask::class.java, ratTaskConfiguration)
+
+    plugins.withType(LifecycleBasePlugin::class.java) {
+        tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure {
+            dependsOn(rat)
+        }
+    }
+
+} else {
+
+    val rat = tasks.create("rat", RatTask::class.java, ratTaskConfiguration)
+
+    plugins.withType(LifecycleBasePlugin::class.java) {
+        tasks[LifecycleBasePlugin.CHECK_TASK_NAME].dependsOn(rat)
     }
 }
+
