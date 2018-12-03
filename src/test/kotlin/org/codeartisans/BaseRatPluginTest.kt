@@ -58,9 +58,9 @@ class BaseRatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersio
             task someRat(type: org.codeartisans.rat.RatTask) {
                 verbose.set(true)
                 inputDir.set(rootDir)
-                excludes.addAll(
+                excludes = [
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
-                )
+                ]
             }
         """)
 

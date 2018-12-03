@@ -24,7 +24,7 @@ plugins {
     id("org.codeartisans.rat-base")
 }
 
-val rat by tasks.registering(RatTask::class) {
+val rat = tasks.register("rat", RatTask::class) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs Apache Rat audit tool"
 }

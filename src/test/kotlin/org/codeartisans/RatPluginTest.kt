@@ -42,10 +42,10 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
             }
             tasks.rat {
                 verbose.set(true)
-                excludes.addAll(
+                excludes = [
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**', 'guh/**',
                     'no-license-file.txt'
-                )
+                ]
             }
         """)
         withFile("no-license-file.txt", "Nothing here.")
@@ -86,9 +86,9 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
             }
             tasks.rat {
                 verbose.set(true)
-                excludes.addAll(
+                excludes = [
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
-                )
+                ]
             }
         """)
         withFile("no-license-file.txt", "Nothing here.")
@@ -120,9 +120,9 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
             tasks.rat {
                 verbose.set(true)
                 failOnError.set(false)
-                excludes.addAll(
+                excludes = [
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
-                )
+                ]
             }
         """)
         withFile("no-license-file.txt", "Nothing here.")
