@@ -31,7 +31,7 @@ import org.junit.runners.Parameterized
 class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
 
     @Test
-    fun `success`() {
+    fun `success, up-to-date and from-cache`() {
         withBuildScript("""
             plugins {
                 id("base")
