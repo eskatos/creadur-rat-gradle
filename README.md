@@ -38,7 +38,7 @@ If the project has a `check` task, the `rat` task is automatically registered as
 **compatibility matrix**
 
     Plugin version | Minimum | Maximum Gradle version
-             0.4.0 |    4.6  | 5.x
+             0.4.0 |    4.7  | 5.x
              0.3.1 |   2.14  | 4.x
              0.3.0 |   2.14  | 4.x
              0.2.0 |   2.14  | 4.x
