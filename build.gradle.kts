@@ -19,6 +19,7 @@
 
 plugins {
     `kotlin-dsl`
+    `maven-publish`
     id("com.gradle.plugin-publish") version "0.10.0"
     id("org.nosphere.apache.rat") version "0.3.0"
     id("org.nosphere.honker") version "0.3.0"
@@ -53,6 +54,22 @@ dependencies {
 
     testImplementation("junit:junit:4.12")
     testImplementation(gradleTestKit())
+}
+
+val sourcesJar by tasks.registering(Jar::class) {
+    group = JavaBasePlugin.DOCUMENTATION_GROUP
+    description = "Assembles sources JAR"
+    classifier = "sources"
+    from(sourceSets.main.map { it.allSource })
+    from(layout.buildDirectory.dir("generated-sources/kotlin-dsl-plugins/kotlin"))
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("pluginMaven") {
+            artifact(sourcesJar.get())
+        }
+    }
 }
 
 sourceSets {
