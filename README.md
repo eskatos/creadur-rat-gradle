@@ -1,41 +1,64 @@
 
 # Apache RAT (Release Audit Tool) Gradle Plugin
 
-**build.gradle(.kts)**
+[![Travis Build Status](http://img.shields.io/travis/eskatos/creadur-rat-gradle.svg)](https://travis-ci.org/eskatos/creadur-rat-gradle)
+[![Apache License 2](http://img.shields.io/badge/license-ASF2-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
-    plugins {
-        id("org.nosphere.apache.rat") version "0.4.0"
-    }
+This plugin allows to run the [Apache RAT](https://creadur.apache.org/rat/) release audit tool, focused on licenses.
 
-    tasks.rat {
+## Installation
 
-        // Input directory, defaults to '.'
-        inputDir.set("some/path")
+In your `build.gradle(.kts)` file:
 
-        // List of Gradle exclude directives, defaults to ['**/.gradle/**']
-        excludes.add("**/build/**")
+```kotlin
+plugins {
+    id("org.nosphere.apache.rat") version "0.4.0"
+}
+```
 
-        // Rat excludes file, one directive per line
-        excludeFile.set(layout.projectDirectory.file(".rat-excludes.txt"))
+## Usage
 
-        // XML, TXT and HTML reports directory, defaults to 'build/reports/rat'
-        reportDir.set(file("some/other/path"))
+The plugin registers a task named `rat` that you can configure in your `build.gradle(.kts)` file:
 
-        // Custom XSL stylesheet for the HTML report
-        stylesheet.set(file("custom/rat-html-stylesheet.xsl")
+```kotlin
+tasks.rat {
 
-        // Fail the build on rat errors, defaults to true
-        failOnError.set(false)
-    }
+    // Input directory, defaults to '.'
+    inputDir.set("some/path")
 
-**command line**
+    // List of Gradle exclude directives, defaults to ['**/.gradle/**']
+    excludes.add("**/build/**")
 
-    gradle rat
+    // Rat excludes file, one directive per line
+    excludeFile.set(layout.projectDirectory.file(".rat-excludes.txt"))
 
-If the project has a `check` task, the `rat` task is automatically registered as dependent on the former.
+    // XML, TXT and HTML reports directory, defaults to 'build/reports/rat'
+    reportDir.set(file("some/other/path"))
+
+    // Custom XSL stylesheet for the HTML report
+    stylesheet.set(file("custom/rat-html-stylesheet.xsl"))
+
+    // Fail the build on rat errors, defaults to true
+    failOnError.set(false)
+}
+```
+
+You can run the `rat` task by invoking Gradle:
+
+```
+gradle rat
+```
+
+If the project has a `check` task, then the `rat` task is automatically registered as dependent on the former.
 
 
-**compatibility matrix**
+## Compatibility
+
+The plugin requires Gradle 4.7 or greater or Gradle 5.x.
+
+The plugin requires Java 6 or greater, tested with up to Java 10 using Gradle 4.7 and Java 11 using Gradle >=4.8.
+
+### Plugin compatibility history
 
     Plugin version | Minimum | Maximum Gradle version
              0.4.0 |    4.7  | 5.x
