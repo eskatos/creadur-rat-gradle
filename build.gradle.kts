@@ -25,6 +25,16 @@ plugins {
     id("org.nosphere.honker") version "0.3.0"
 }
 
+group = "org.codeartisans"
+version = "0.4.0-SNAPSHOT"
+
+pluginBundle {
+    website = "https://github.com/eskatos/creadur-rat-gradle"
+    vcsUrl = "https://github.com/eskatos/creadur-rat-gradle"
+    description = "Apache RAT (Release Audit Tool) Gradle Plugin"
+    tags = listOf("apache", "release-audit", "license")
+}
+
 repositories {
     gradlePluginPortal()
 }
@@ -68,10 +78,3 @@ tasks.rat {
     ))
 }
 tasks.check { dependsOn(tasks.rat) }
-
-pluginBundle {
-    website = "https://github.com/eskatos/creadur-rat-gradle"
-    vcsUrl = "https://github.com/eskatos/creadur-rat-gradle"
-    description = "Apache RAT (Release Audit Tool) Gradle Plugin"
-    tags = listOf("apache", "release-audit", "license")
-}
