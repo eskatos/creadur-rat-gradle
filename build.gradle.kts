@@ -18,6 +18,7 @@
  */
 
 plugins {
+    `build-scan`
     `kotlin-dsl`
     `maven-publish`
     id("com.gradle.plugin-publish") version "0.10.0"
@@ -27,6 +28,16 @@ plugins {
 
 group = "org.nosphere.apache"
 version = "0.5.0-SNAPSHOT"
+
+val isCI = System.getenv("CI") == "true"
+
+if (isCI) {
+    buildScan {
+        termsOfServiceUrl = "https://gradle.com/terms-of-service"
+        termsOfServiceAgree = "yes"
+        tag("CI")
+    }
+}
 
 pluginBundle {
     website = "https://github.com/eskatos/creadur-rat-gradle"
@@ -67,7 +78,7 @@ dependencies {
 val sourcesJar by tasks.registering(Jar::class) {
     group = JavaBasePlugin.DOCUMENTATION_GROUP
     description = "Assembles sources JAR"
-    classifier = "sources"
+    archiveClassifier.set("sources")
     from(sourceSets.main.map { it.allSource })
     from(layout.buildDirectory.dir("generated-sources/kotlin-dsl-plugins/kotlin"))
 }
