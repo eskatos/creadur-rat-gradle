@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     `kotlin-dsl`
@@ -35,6 +34,16 @@ pluginBundle {
     tags = listOf("apache", "release-audit", "license")
 }
 
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_6
+    targetCompatibility = JavaVersion.VERSION_1_6
+}
+
+kotlinDslPluginOptions {
+    experimentalWarning.set(false)
+    jvmTarget.set("1.6")
+}
+
 repositories {
     gradlePluginPortal()
 }
@@ -44,19 +53,6 @@ dependencies {
 
     testImplementation("junit:junit:4.12")
     testImplementation(gradleTestKit())
-}
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "1.8"
-        languageVersion = "1.3"
-        apiVersion = "1.3"
-    }
 }
 
 sourceSets {
