@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.codeartisans
+package org.nosphere.apache
 
 plugins {
     id("reporting-base")

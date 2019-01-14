@@ -16,15 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.codeartisans
+package org.nosphere.apache
 
-import org.codeartisans.rat.RatTask
+import org.nosphere.apache.rat.RatTask
 
 import org.gradle.util.GradleVersion
 
 
 plugins {
-    id("org.codeartisans.rat-base")
+    id("org.nosphere.apache.rat-base")
 }
 
 

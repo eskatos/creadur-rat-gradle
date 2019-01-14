@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.codeartisans.rat
+package org.nosphere.apache.rat
 
 import org.apache.rat.Defaults
 import org.apache.rat.Report

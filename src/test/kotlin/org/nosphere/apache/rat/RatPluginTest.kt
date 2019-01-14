@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.codeartisans
+package org.nosphere.apache.rat
 
 import org.gradle.testkit.runner.TaskOutcome
 import org.hamcrest.CoreMatchers.equalTo
@@ -35,7 +35,7 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
         withBuildScript("""
             plugins {
                 id("base")
-                id("org.codeartisans.rat")
+                id("org.nosphere.apache.rat")
             }
             repositories {
                 gradlePluginPortal()
@@ -79,7 +79,7 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
         withBuildScript("""
             plugins {
                 id("base")
-                id("org.codeartisans.rat")
+                id("org.nosphere.apache.rat")
             }
             repositories {
                 gradlePluginPortal()
@@ -112,7 +112,7 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
         withBuildScript("""
             plugins {
                 id("base")
-                id("org.codeartisans.rat")
+                id("org.nosphere.apache.rat")
             }
             repositories {
                 gradlePluginPortal()

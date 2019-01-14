@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.codeartisans
+package org.nosphere.apache.rat
 
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,7 +30,7 @@ class BaseRatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersio
 
         withBuildScript("""
             plugins {
-                id("org.codeartisans.rat-base")
+                id("org.nosphere.apache.rat-base")
             }
             repositories {
                 gradlePluginPortal()
@@ -50,12 +50,12 @@ class BaseRatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersio
 
         withBuildScript("""
             plugins {
-                id("org.codeartisans.rat-base")
+                id("org.nosphere.apache.rat-base")
             }
             repositories {
                 gradlePluginPortal()
             }
-            task someRat(type: org.codeartisans.rat.RatTask) {
+            task someRat(type: org.nosphere.apache.rat.RatTask) {
                 verbose.set(true)
                 inputDir.set(rootDir)
                 excludes = [

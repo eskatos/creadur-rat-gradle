@@ -25,14 +25,22 @@ plugins {
     id("org.nosphere.honker") version "0.3.0"
 }
 
-group = "org.codeartisans"
-version = "0.4.0-SNAPSHOT"
+group = "org.nosphere.apache"
+version = "0.4.0"
 
 pluginBundle {
     website = "https://github.com/eskatos/creadur-rat-gradle"
     vcsUrl = "https://github.com/eskatos/creadur-rat-gradle"
     description = "Apache RAT (Release Audit Tool) Gradle Plugin"
     tags = listOf("apache", "release-audit", "license")
+    plugins {
+        named("org.nosphere.apache.rat-base") {
+            displayName = "Apache RAT Base Gradle Plugin"
+        }
+        named("org.nosphere.apache.rat") {
+            displayName = "Apache RAT Gradle Plugin"
+        }
+    }
 }
 
 java {

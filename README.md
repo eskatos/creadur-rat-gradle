@@ -4,7 +4,7 @@
 **build.gradle(.kts)**
 
     plugins {
-        id("org.codeartisans.rat") version "0.4.0"
+        id("org.nosphere.apache.rat") version "0.4.0"
     }
 
     tasks.rat {
