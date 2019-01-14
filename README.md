@@ -20,6 +20,9 @@ plugins {
 
 The plugin registers a task named `rat` that you can configure in your `build.gradle(.kts)` file:
 
+<details open>
+<summary>Kotlin DSL</summary>
+
 ```kotlin
 tasks.rat {
 
@@ -42,6 +45,36 @@ tasks.rat {
     failOnError.set(false)
 }
 ```
+
+</details>
+<details>
+<summary>Groovy DSL</summary>
+
+```groovy
+rat {
+
+    // Input directory, defaults to '.'
+    inputDir.set("some/path")
+
+    // List of Gradle exclude directives, defaults to ['**/.gradle/**']
+    excludes.add("**/build/**")
+
+    // Rat excludes file, one directive per line
+    excludeFile.set(layout.projectDirectory.file(".rat-excludes.txt"))
+
+    // XML, TXT and HTML reports directory, defaults to 'build/reports/rat'
+    reportDir.set(file("some/other/path"))
+
+    // Custom XSL stylesheet for the HTML report
+    stylesheet.set(file("custom/rat-html-stylesheet.xsl"))
+
+    // Fail the build on rat errors, defaults to true
+    failOnError.set(false)
+}
+```
+
+</details>
+
 
 You can run the `rat` task by invoking Gradle:
 
