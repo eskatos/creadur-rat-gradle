@@ -21,7 +21,7 @@ plugins {
     `kotlin-dsl`
     `maven-publish`
     id("com.gradle.plugin-publish") version "0.10.0"
-    id("org.nosphere.apache.rat") version "0.3.0"
+    id("org.nosphere.apache.rat") version "0.4.0"
     id("org.nosphere.honker") version "0.3.0"
 }
 
@@ -92,10 +92,10 @@ tasks.honkerGenNotice { footer = "This product includes software developed at\nT
 tasks.check { dependsOn(tasks.honkerCheck) }
 
 tasks.rat {
-    excludes.plusAssign(listOf(
+    excludes.addAll(
             "README.md",
             ".gradletasknamecache", "gradle/wrapper/**", "gradlew*", "build/**", // Gradle
             ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**" // IDEs
-    ))
+    )
 }
 tasks.check { dependsOn(tasks.rat) }
