@@ -93,9 +93,9 @@ publishing {
 
 sourceSets {
     main {
-        output.dir(tasks.honkerGenDependencies.get().outputDir, "builtBy" to tasks.honkerGenDependencies)
-        output.dir(tasks.honkerGenLicense.get().outputDir, "builtBy" to tasks.honkerGenLicense)
-        output.dir(tasks.honkerGenNotice.get().outputDir, "builtBy" to tasks.honkerGenNotice)
+        output.dir(tasks.honkerGenDependencies.map { it.outputDir }, "builtBy" to tasks.honkerGenDependencies)
+        output.dir(tasks.honkerGenLicense.map { it.outputDir }, "builtBy" to tasks.honkerGenLicense)
+        output.dir(tasks.honkerGenNotice.map { it.outputDir }, "builtBy" to tasks.honkerGenNotice)
     }
 }
 honker.license = "Apache 2"
