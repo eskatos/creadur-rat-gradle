@@ -19,5 +19,5 @@
 package org.nosphere.apache
 
 plugins {
-    id("reporting-base")
+    `reporting-base`
 }
