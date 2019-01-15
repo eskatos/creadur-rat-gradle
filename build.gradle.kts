@@ -104,7 +104,7 @@ tasks.check { dependsOn(tasks.honkerCheck) }
 
 tasks.rat {
     excludes.addAll(
-            "README.md",
+            "README.md", "CODE_OF_CONDUCT.md",
             ".gradletasknamecache", "gradle/wrapper/**", "gradlew*", "build/**", // Gradle
             ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**" // IDEs
     )
