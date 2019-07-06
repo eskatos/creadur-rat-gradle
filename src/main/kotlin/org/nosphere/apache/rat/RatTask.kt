@@ -19,10 +19,8 @@
 package org.nosphere.apache.rat
 
 import org.gradle.api.DefaultTask
-import org.gradle.api.file.FileTree
 import org.gradle.api.reporting.ReportingExtension
 import org.gradle.api.tasks.*
-import org.gradle.api.tasks.Console
 import org.gradle.workers.WorkerExecutor
 import org.gradle.workers.IsolationMode.PROCESS
 
@@ -51,24 +49,19 @@ open class RatTask @Inject constructor(
     }
 
     @Internal
-    val inputDir = newInputDirectory().apply {
-        set(project.layout.projectDirectory)
-    }
+    @Deprecated("Use inputFiles.from(...)", replaceWith = ReplaceWith("inputFiles.from"), level = DeprecationLevel.ERROR)
+    val inputDir = newInputDirectory()
 
     @Internal
-    val excludes = project.objects.listProperty<String>().apply {
-        set(listOf("**/.gradle/**"))
-    }
+    @Deprecated("Use inputFiles.exclude(...)", replaceWith = ReplaceWith("inputFiles.excludes"), level = DeprecationLevel.ERROR)
+    val excludes = project.objects.listProperty<String>()
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     @Suppress("unused")
-    val inputFiles: FileTree
-        get() = inputDir.map {
-            project.fileTree(inputDir.get().asFile) {
-                exclude(this@RatTask.excludes.get())
-            }
-        }.get()
+    val inputFiles = project.fileTree(project.layout.projectDirectory) {
+        exclude("**/.gradle/**")
+    }
 
     @InputFile
     @Optional
@@ -106,7 +99,7 @@ open class RatTask @Inject constructor(
     fun buildRatWorkSpec() = RatWorkSpec(
             verbose = verbose.get(),
             failOnError = failOnError.get(),
-            baseDir = inputDir.asFile.get(),
+            baseDir = inputFiles.dir,
             reportedFiles = inputFiles.files.filter { it.isFile },
             excludeFile = excludeFile.orNull?.asFile,
             stylesheet = stylesheet.asFile.orNull ?: defaultStylesheet(),

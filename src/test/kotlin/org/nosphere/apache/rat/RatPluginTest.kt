@@ -42,7 +42,7 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
             }
             tasks.rat {
                 verbose.set(true)
-                excludes = [
+                inputFiles.excludes = [
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**', 'guh/**',
                     'no-license-file.txt'
                 ]
@@ -86,7 +86,7 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
             }
             tasks.rat {
                 verbose.set(true)
-                excludes = [
+                inputFiles.excludes = [
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
                 ]
             }
@@ -120,7 +120,7 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
             tasks.rat {
                 verbose.set(true)
                 failOnError.set(false)
-                excludes = [
+                inputFiles.excludes = [
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
                 ]
             }

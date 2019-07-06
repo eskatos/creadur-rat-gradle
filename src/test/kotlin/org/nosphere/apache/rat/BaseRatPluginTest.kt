@@ -57,8 +57,8 @@ class BaseRatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersio
             }
             task someRat(type: org.nosphere.apache.rat.RatTask) {
                 verbose.set(true)
-                inputDir.set(rootDir)
-                excludes = [
+                inputFiles.from(rootDir)
+                inputFiles.excludes = [
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
                 ]
             }
