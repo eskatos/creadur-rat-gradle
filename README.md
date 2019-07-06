@@ -32,6 +32,9 @@ tasks.rat {
     // List of Gradle exclude directives, defaults to ['**/.gradle/**']
     excludes.add("**/build/**")
 
+    // RatTask 0.5.0+ implements PatternFilterable
+    exclude { it.file in configurations.someConf.files }
+
     // Rat excludes file, one directive per line
     excludeFile.set(layout.projectDirectory.file(".rat-excludes.txt"))
 
