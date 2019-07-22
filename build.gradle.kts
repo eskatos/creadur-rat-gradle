@@ -21,7 +21,7 @@ plugins {
     `build-scan`
     `kotlin-dsl`
     `maven-publish`
-    id("com.gradle.plugin-publish") version "0.10.0"
+    id("com.gradle.plugin-publish") version "0.10.1"
     id("org.nosphere.apache.rat") version "0.4.0"
     id("org.nosphere.honker") version "0.3.0"
 }
