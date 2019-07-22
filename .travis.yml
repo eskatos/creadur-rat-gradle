@@ -22,7 +22,7 @@ matrix:
       sudo: required
       jdk: openjdk8
 
-script: ./gradlew check --continue --stacktrace --console=plain --scan
+script: ./gradlew check --no-parallel --no-build-cache --continue --stacktrace --console=plain --scan
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
