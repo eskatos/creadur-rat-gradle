@@ -75,6 +75,11 @@ dependencies {
     testImplementation(gradleTestKit())
 }
 
+tasks.validateTaskProperties {
+    failOnWarning = true
+    enableStricterValidation = true
+}
+
 val sourcesJar by tasks.registering(Jar::class) {
     group = JavaBasePlugin.DOCUMENTATION_GROUP
     description = "Assembles sources JAR"
