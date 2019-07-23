@@ -23,6 +23,8 @@ import org.gradle.api.file.FileTree
 import org.gradle.api.reporting.ReportingExtension
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.Console
+import org.gradle.api.tasks.util.PatternFilterable
+import org.gradle.api.tasks.util.PatternSet
 import org.gradle.workers.WorkerExecutor
 import org.gradle.workers.IsolationMode.PROCESS
 
@@ -36,9 +38,16 @@ const val ratVersion = "0.13"
 
 
 @CacheableTask
-open class RatTask @Inject constructor(
+open class RatTask private constructor(
+        private val patternSet: PatternSet,
         private val workerExecutor: WorkerExecutor
-) : DefaultTask() {
+) : DefaultTask(), PatternFilterable by patternSet {
+
+    @Inject constructor(
+        workerExecutor: WorkerExecutor
+    ) : this(PatternSet().apply {
+        exclude("**/.gradle/**")
+    }, workerExecutor)
 
     @Console
     val verbose = project.objects.property<Boolean>().apply {
@@ -56,19 +65,21 @@ open class RatTask @Inject constructor(
     }
 
     @Internal
-    val excludes = project.objects.listProperty<String>().apply {
-        set(listOf("**/.gradle/**"))
-    }
+    override fun getIncludes(): MutableSet<String> = patternSet.includes
+
+    @Internal
+    override fun getExcludes(): MutableSet<String> = patternSet.excludes
 
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     @Suppress("unused")
     val inputFiles: FileTree
-        get() = inputDir.map {
+        get() =
             project.fileTree(inputDir.get().asFile) {
-                exclude(this@RatTask.excludes.get())
+                if (!patternSet.isEmpty) {
+                    include(patternSet.asSpec)
+                }
             }
-        }.get()
 
     @InputFile
     @Optional

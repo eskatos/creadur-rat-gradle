@@ -43,9 +43,12 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
             tasks.rat {
                 verbose.set(true)
                 excludes = [
-                    'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**', 'guh/**',
-                    'no-license-file.txt'
+                    'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',
                 ]
+                exclude(
+                    'guh/**',
+                    'no-license-file.txt'
+                )
             }
         """)
         withFile("no-license-file.txt", "Nothing here.")
