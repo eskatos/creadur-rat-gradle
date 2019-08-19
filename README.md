@@ -73,6 +73,9 @@ rat {
 
     // Fail the build on rat errors, defaults to true
     failOnError.set(false)
+
+    // Prints the complete plain text report, defaults to false
+    verbose.set(true) 
 }
 ```
 
@@ -87,12 +90,25 @@ gradle rat
 
 If the project has a `check` task, then the `rat` task is automatically registered as dependent on the former.
 
+When a Rat audit fails, a clickable URL of the HTML report will be printed out:
+
+```
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':rat'.
+> Apache Rat audit failure - 35 unapproved licenses
+    See file:///path/to/build/reports/rat/index.html
+```
+
+![Apache Rat HTML Report](src/docs/resources/html_report_header.png "Apache Rat HTML Report")
+
 
 ## Compatibility
 
 The plugin requires Gradle 4.7 or greater or Gradle 5.x.
 
-The plugin requires Java 6 or greater, tested with up to Java 10 using Gradle 4.7 and Java 11 using Gradle >=4.8.
+The plugin requires Java 6 or greater, tested with up to Java 10 using Gradle 4.7 and Java 11 using Gradle >= 4.8.
 
 ### Plugin compatibility history
 
