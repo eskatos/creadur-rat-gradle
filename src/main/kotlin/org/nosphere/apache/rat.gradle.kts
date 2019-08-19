@@ -52,4 +52,3 @@ if (GradleVersion.current() >= GradleVersion.version("4.9")) {
         tasks[LifecycleBasePlugin.CHECK_TASK_NAME].dependsOn(rat)
     }
 }
-

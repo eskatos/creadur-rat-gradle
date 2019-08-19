@@ -40,19 +40,19 @@ import javax.xml.transform.stream.StreamSource
 
 internal
 data class RatWorkSpec(
-        val verbose: Boolean,
-        val failOnError: Boolean,
-        val baseDir: File,
-        val reportedFiles: List<File>,
-        val excludeFile: File?,
-        val stylesheet: File,
-        val reportDirectory: File
+    val verbose: Boolean,
+    val failOnError: Boolean,
+    val baseDir: File,
+    val reportedFiles: List<File>,
+    val excludeFile: File?,
+    val stylesheet: File,
+    val reportDirectory: File
 ) : Serializable
 
 
 internal
 open class RatWork @Inject constructor(
-        private val spec: RatWorkSpec
+    private val spec: RatWorkSpec
 ) : Runnable {
 
     override fun run() {
@@ -98,24 +98,24 @@ open class RatWork @Inject constructor(
 
     private
     fun transformReport(xmlReportFile: File, htmlReportFile: File, plainReportFile: File) =
-            TransformerFactory.newInstance().let { factory ->
+        TransformerFactory.newInstance().let { factory ->
 
-                factory.newTransformer(StreamSource(spec.stylesheet)).transform(
-                        StreamSource(xmlReportFile),
-                        StreamResult(htmlReportFile)
-                )
+            factory.newTransformer(StreamSource(spec.stylesheet)).transform(
+                StreamSource(xmlReportFile),
+                StreamResult(htmlReportFile)
+            )
 
-                factory.newTransformer(StreamSource(Defaults.getPlainStyleSheet())).transform(
-                        StreamSource(xmlReportFile),
-                        StreamResult(plainReportFile)
-                )
-            }
+            factory.newTransformer(StreamSource(Defaults.getPlainStyleSheet())).transform(
+                StreamSource(xmlReportFile),
+                StreamResult(plainReportFile)
+            )
+        }
 }
 
 private
 class FilesReportable(
-        private val files: List<File>,
-        private val excludeFile: File?
+    private val files: List<File>,
+    private val excludeFile: File?
 ) : IReportable {
 
     override fun run(report: RatReport) {
@@ -134,8 +134,8 @@ class FilesReportable(
 
     private
     fun createFilenameFilter(lines: List<String>) =
-            Report::class.java.getDeclaredMethod("parseExclusions", List::class.java).run {
-                isAccessible = true
-                invoke(null, lines)
-            } as FilenameFilter
+        Report::class.java.getDeclaredMethod("parseExclusions", List::class.java).run {
+            isAccessible = true
+            invoke(null, lines)
+        } as FilenameFilter
 }

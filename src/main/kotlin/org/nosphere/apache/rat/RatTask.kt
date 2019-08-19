@@ -44,11 +44,16 @@ open class RatTask private constructor(
         private val workerExecutor: WorkerExecutor
 ) : DefaultTask(), PatternFilterable by patternSet {
 
-    @Inject constructor(
-        workerExecutor: WorkerExecutor
-    ) : this(PatternSet().apply {
-        exclude("**/.gradle/**")
-    }, workerExecutor)
+    @Inject
+    constructor(workerExecutor: WorkerExecutor) : this(newDefaultPatternSet(), workerExecutor)
+
+    companion object {
+
+        fun newDefaultPatternSet() =
+                PatternSet().apply {
+                    exclude("**/.gradle/**")
+                }
+    }
 
     @Console
     val verbose = project.objects.property<Boolean>().apply {
