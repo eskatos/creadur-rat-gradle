@@ -12,7 +12,7 @@ In your `build.gradle(.kts)` file:
 
 ```kotlin
 plugins {
-    id("org.nosphere.apache.rat") version "0.5.1"
+    id("org.nosphere.apache.rat") version "0.5.2"
 }
 ```
 
@@ -113,6 +113,7 @@ The plugin requires Java 6 or greater, tested with up to Java 10 using Gradle 4.
 ### Plugin compatibility history
 
     Plugin version | Minimum | Maximum Gradle version
+             0.5.2 |    4.7  | 5.x
              0.5.1 |    4.7  | 5.x
              0.5.0 |    4.7  | 5.x
              0.4.0 |    4.7  | 5.x
