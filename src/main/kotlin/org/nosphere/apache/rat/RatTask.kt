@@ -25,6 +25,7 @@ import org.gradle.api.tasks.*
 import org.gradle.api.tasks.Console
 import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.api.tasks.util.PatternSet
+import org.gradle.util.GradleVersion
 import org.gradle.workers.WorkerExecutor
 import org.gradle.workers.IsolationMode.PROCESS
 
@@ -60,7 +61,7 @@ open class RatTask private constructor(
     }
 
     @Internal
-    val inputDir = newInputDirectory().apply {
+    val inputDir = newInputDirectoryProperty().apply {
         set(project.layout.projectDirectory)
     }
 
@@ -84,15 +85,15 @@ open class RatTask private constructor(
     @InputFile
     @Optional
     @PathSensitive(PathSensitivity.NONE)
-    val excludeFile = newInputFile()
+    val excludeFile = newInputFileProperty()
 
     @InputFile
     @Optional
     @PathSensitive(PathSensitivity.NONE)
-    val stylesheet = newInputFile()
+    val stylesheet = newInputFileProperty()
 
     @OutputDirectory
-    val reportDir = newOutputDirectory().apply {
+    val reportDir = newOutputDirectoryProperty().apply {
         set(project.layout.projectDirectory.dir(project.provider {
             project.the<ReportingExtension>().file(name).canonicalPath
         }))
@@ -134,4 +135,27 @@ open class RatTask private constructor(
                     }
                 }
             }
+
+    private
+    object CurrentGradle {
+        val isLessThanFiveZero = GradleVersion.current() < GradleVersion.version("5.0")
+    }
+
+    private
+    fun newInputFileProperty() = when {
+        CurrentGradle.isLessThanFiveZero -> newInputFile()
+        else -> project.objects.fileProperty()
+    }
+
+    private
+    fun newInputDirectoryProperty() = when {
+        CurrentGradle.isLessThanFiveZero -> newInputDirectory()
+        else -> project.objects.directoryProperty()
+    }
+
+    private
+    fun newOutputDirectoryProperty() = when {
+        CurrentGradle.isLessThanFiveZero -> newOutputDirectory()
+        else -> project.objects.directoryProperty()
+    }
 }

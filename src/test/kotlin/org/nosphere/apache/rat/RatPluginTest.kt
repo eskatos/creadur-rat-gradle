@@ -19,7 +19,9 @@
 package org.nosphere.apache.rat
 
 import org.gradle.testkit.runner.TaskOutcome
+import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.not
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -141,6 +143,30 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
         build("check").apply {
             println(output)
             assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.UP_TO_DATE))
+        }
+    }
+
+    @Test
+    fun `no deprecation warnings`() {
+        withBuildScript("""
+            plugins {
+                id("base")
+                id("org.nosphere.apache.rat")
+            }
+            repositories {
+                gradlePluginPortal()
+            }
+            tasks.rat {
+                excludes = [
+                    'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',
+                ]
+            }
+        """)
+
+        build("rat", "--warning-mode=all").apply {
+            println(output)
+            assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.SUCCESS))
+            assertThat(output, not(containsString("has been deprecated")))
         }
     }
 }
