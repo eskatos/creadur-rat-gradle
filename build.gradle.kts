@@ -111,7 +111,7 @@ tasks.rat {
     excludes.addAll(
             "README.md", "CODE_OF_CONDUCT.md",
             ".gradletasknamecache", "gradle/wrapper/**", "gradlew*", "build/**", // Gradle
-            ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**" // IDEs
+            ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**", ".editorconfig" // IDEs
     )
 }
 tasks.check { dependsOn(tasks.rat) }
