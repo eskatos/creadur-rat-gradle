@@ -18,7 +18,12 @@
  */
 package org.nosphere.apache.rat
 
+import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
+import org.gradle.testkit.runner.TaskOutcome.FAILED
+import org.gradle.testkit.runner.TaskOutcome.FROM_CACHE
+import org.gradle.testkit.runner.TaskOutcome.SUCCESS
+import org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.CoreMatchers.not
@@ -55,25 +60,22 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
         """)
         withFile("no-license-file.txt", "Nothing here.")
 
-        build("check").apply {
-            println(output)
-            assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.SUCCESS))
+        build("check") {
+            assertRatTask(SUCCESS)
             assertGeneratedAllReports()
         }
 
-        build("check").apply {
-            println(output)
-            assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.UP_TO_DATE))
+        build("check") {
+            assertRatTask(UP_TO_DATE)
         }
 
-        build("clean", "check", "--build-cache", "-g", rootDir.resolve("guh").canonicalPath).apply {
-            println(output)
-            assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.SUCCESS))
+        build("clean", "check", "--build-cache", "-g", rootDir.resolve("guh").canonicalPath) {
+            assertRatTask(SUCCESS)
         }
 
-        build("clean", "check", "--build-cache", "-g", rootDir.resolve("guh").canonicalPath).apply {
-            println(output)
-            assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.FROM_CACHE))
+        build("clean", "check", "--build-cache", "-g", rootDir.resolve("guh").canonicalPath) {
+            assertRatTask(FROM_CACHE)
+            assertGeneratedAllReports()
         }
     }
 
@@ -96,17 +98,14 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
         """)
         withFile("no-license-file.txt", "Nothing here.")
 
-        buildAndFail("check").apply {
-            println(output)
-            assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.FAILED))
+        buildAndFail("check") {
+            assertRatTask(FAILED)
             assertGeneratedAllReports()
-            assertThat(output, containsString("Apache Rat audit failure - 1 unapproved license"))
-            assertThat(output, containsString(htmlReportFile.absolutePath))
+            assertOutputContainsAuditFailureMessage()
         }
 
-        buildAndFail("check").apply {
-            println(output)
-            assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.FAILED))
+        buildAndFail("check") {
+            assertRatTask(FAILED)
         }
     }
 
@@ -130,17 +129,14 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
         """)
         withFile("no-license-file.txt", "Nothing here.")
 
-        build("check").apply {
-            println(output)
-            assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.SUCCESS))
+        build("check") {
+            assertRatTask(SUCCESS)
             assertGeneratedAllReports()
-            assertThat(output, containsString("Apache Rat audit failure - 1 unapproved license"))
-            assertThat(output, containsString(htmlReportFile.absolutePath))
+            assertOutputContainsAuditFailureMessage()
         }
 
-        build("check").apply {
-            println(output)
-            assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.UP_TO_DATE))
+        build("check") {
+            assertRatTask(UP_TO_DATE)
         }
     }
 
@@ -161,11 +157,21 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
             }
         """)
 
-        build("rat", "--warning-mode=all").apply {
-            println(output)
-            assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.SUCCESS))
+        build("rat", "--warning-mode=all") {
+            assertRatTask(SUCCESS)
             assertThat(output, not(containsString("has been deprecated")))
         }
+    }
+
+    private
+    fun BuildResult.assertRatTask(outcome: TaskOutcome) {
+        assertThat(outcomeOf(":rat"), equalTo(outcome))
+    }
+
+    private
+    fun BuildResult.assertOutputContainsAuditFailureMessage(unApprovedLicenses: Int = 1) {
+        assertThat(output, containsString("Apache Rat audit failure - $unApprovedLicenses unapproved license"))
+        assertThat(output, containsString(htmlReportFile.absolutePath))
     }
 
     private
@@ -186,5 +192,4 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
     private
     val htmlReportFile
         get() = rootDir.resolve("build/reports/rat/index.html")
-
 }

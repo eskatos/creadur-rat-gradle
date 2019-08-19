@@ -73,12 +73,16 @@ abstract class AbstractPluginTest(
         withFile("build.gradle", text)
 
     protected
-    fun build(vararg arguments: String) =
-        gradleRunnerFor(*arguments).build()
+    fun build(vararg arguments: String, block: BuildResult.() -> Unit = {}): BuildResult =
+        gradleRunnerFor(*arguments)
+            .build()
+            .also(block)
 
     protected
-    fun buildAndFail(vararg arguments: String) =
-        gradleRunnerFor(*arguments).buildAndFail()
+    fun buildAndFail(vararg arguments: String, block: BuildResult.() -> Unit = {}): BuildResult =
+        gradleRunnerFor(*arguments)
+            .buildAndFail()
+            .also(block)
 
     private
     fun gradleRunnerFor(vararg arguments: String) =
