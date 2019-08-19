@@ -27,7 +27,7 @@ plugins {
 }
 
 group = "org.nosphere.apache"
-version = "0.5.2"
+version = "0.6.0-SNAPSHOT"
 
 val isCI = System.getenv("CI") == "true"
 
