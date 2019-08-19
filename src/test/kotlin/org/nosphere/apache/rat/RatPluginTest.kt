@@ -58,9 +58,7 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
         build("check").apply {
             println(output)
             assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.SUCCESS))
-            assertTrue(rootDir.resolve("build/reports/rat/rat-report.xml").isFile)
-            assertTrue(rootDir.resolve("build/reports/rat/rat-report.txt").isFile)
-            assertTrue(rootDir.resolve("build/reports/rat/index.html").isFile)
+            assertGeneratedAllReports()
         }
 
         build("check").apply {
@@ -101,9 +99,9 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
         buildAndFail("check").apply {
             println(output)
             assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.FAILED))
-            assertTrue(rootDir.resolve("build/reports/rat/rat-report.xml").isFile)
-            assertTrue(rootDir.resolve("build/reports/rat/rat-report.txt").isFile)
-            assertTrue(rootDir.resolve("build/reports/rat/index.html").isFile)
+            assertGeneratedAllReports()
+            assertThat(output, containsString("Apache Rat audit failure - 1 unapproved license"))
+            assertThat(output, containsString(htmlReportFile.absolutePath))
         }
 
         buildAndFail("check").apply {
@@ -135,9 +133,9 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
         build("check").apply {
             println(output)
             assertThat(outcomeOf(":rat"), equalTo(TaskOutcome.SUCCESS))
-            assertTrue(rootDir.resolve("build/reports/rat/rat-report.xml").isFile)
-            assertTrue(rootDir.resolve("build/reports/rat/rat-report.txt").isFile)
-            assertTrue(rootDir.resolve("build/reports/rat/index.html").isFile)
+            assertGeneratedAllReports()
+            assertThat(output, containsString("Apache Rat audit failure - 1 unapproved license"))
+            assertThat(output, containsString(htmlReportFile.absolutePath))
         }
 
         build("check").apply {
@@ -169,4 +167,24 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
             assertThat(output, not(containsString("has been deprecated")))
         }
     }
+
+    private
+    fun assertGeneratedAllReports() {
+        assertTrue(xmlReportFile.isFile)
+        assertTrue(plainReportFile.isFile)
+        assertTrue(htmlReportFile.isFile)
+    }
+
+    private
+    val xmlReportFile
+        get() = rootDir.resolve("build/reports/rat/rat-report.xml")
+
+    private
+    val plainReportFile
+        get() = rootDir.resolve("build/reports/rat/rat-report.txt")
+
+    private
+    val htmlReportFile
+        get() = rootDir.resolve("build/reports/rat/index.html")
+
 }

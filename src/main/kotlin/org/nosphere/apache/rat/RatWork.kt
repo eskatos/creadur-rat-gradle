@@ -29,6 +29,8 @@ import org.apache.rat.report.claim.ClaimStatistic
 import org.apache.rat.report.xml.XmlReportFactory
 import org.apache.rat.report.xml.writer.impl.base.XmlWriter
 
+import org.gradle.internal.logging.ConsoleRenderer
+
 import java.io.File
 import java.io.FilenameFilter
 import java.io.Serializable
@@ -70,8 +72,11 @@ open class RatWork @Inject constructor(
         transformReport(xmlReportFile, htmlReportFile, plainReportFile)
 
         if (stats.numUnApproved > 0) {
-            if (spec.failOnError) throw RatException("Apache Rat audit failure\n${plainReportFile.readText()}")
-            else System.err.println(plainReportFile.readText())
+            val message = "Apache Rat audit failure - " +
+                "${stats.numUnApproved} unapproved license${if (stats.numUnApproved > 1) "s" else ""}\n" +
+                "\tSee ${ConsoleRenderer().asClickableFileUrl(htmlReportFile)}"
+            if (spec.failOnError) throw RatException(message)
+            else System.err.println(message)
         } else if (spec.verbose) {
             println(plainReportFile.readText())
         }
