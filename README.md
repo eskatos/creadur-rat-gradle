@@ -57,7 +57,7 @@ tasks.rat {
 rat {
 
     // Input directory, defaults to '.'
-    inputDir.set("some/path")
+    inputDir.set(file("some/path"))
 
     // List of Gradle exclude directives, defaults to ['**/.gradle/**']
     excludes.add("**/build/**")
