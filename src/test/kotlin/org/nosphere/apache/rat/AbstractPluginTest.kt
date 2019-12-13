@@ -89,6 +89,7 @@ abstract class AbstractPluginTest(
         GradleRunner.create()
             .withGradleVersion(gradleVersion)
             .withPluginClasspath()
+            .forwardOutput()
             .withProjectDir(rootDir)
             .withArguments(*(arguments.toList().plus("-s")).toTypedArray())
 
