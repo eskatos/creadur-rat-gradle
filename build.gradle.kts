@@ -22,7 +22,7 @@ plugins {
     `kotlin-dsl`
     `maven-publish`
     id("com.gradle.plugin-publish") version "0.10.1"
-    id("org.nosphere.apache.rat") version "0.5.2"
+    id("org.nosphere.apache.rat") version "0.5.3"
     id("org.nosphere.honker") version "0.3.0"
 }
 
