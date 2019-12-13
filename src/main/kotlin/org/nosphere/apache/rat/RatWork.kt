@@ -31,10 +31,14 @@ import org.apache.rat.report.xml.writer.impl.base.XmlWriter
 
 import org.gradle.internal.logging.ConsoleRenderer
 
+import org.w3c.dom.Element
+import org.w3c.dom.NodeList
+
 import java.io.File
 import java.io.FilenameFilter
 import java.io.Serializable
 import javax.inject.Inject
+import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.stream.StreamResult
 import javax.xml.transform.stream.StreamSource
@@ -72,13 +76,14 @@ open class RatWork @Inject constructor(
         transformReport(xmlReportFile, htmlReportFile, plainReportFile)
 
         if (stats.numUnApproved > 0) {
+            if (spec.verbose) {
+                System.err.println(verboseFailureOutput(xmlReportFile))
+            }
             val message = "Apache Rat audit failure - " +
                 "${stats.numUnApproved} unapproved license${if (stats.numUnApproved > 1) "s" else ""}\n" +
                 "\tSee ${ConsoleRenderer().asClickableFileUrl(htmlReportFile)}"
             if (spec.failOnError) throw RatException(message)
             else System.err.println(message)
-        } else if (spec.verbose) {
-            println(plainReportFile.readText())
         }
     }
 
@@ -114,6 +119,36 @@ open class RatWork @Inject constructor(
                 StreamSource(xmlReportFile),
                 StreamResult(plainReportFile)
             )
+        }
+
+    private
+    fun verboseFailureOutput(xmlReportFile: File): String =
+        unapprovedFilesFrom(xmlReportFile).joinToString(
+            separator = "\n - ",
+            prefix = "Files with unapproved licenses:\n - ",
+            postfix = "\n"
+        )
+
+    private
+    fun unapprovedFilesFrom(xmlReportFile: File): List<String> =
+        DocumentBuilderFactory.newInstance().newDocumentBuilder()
+            .parse(xmlReportFile)
+            .getElementsByTagName("resource")
+            .toElementList()
+            .filter { resource ->
+                resource.childNodes.toElementList().any {
+                    it.tagName == "license-approval" && it.getAttribute("name") == "false"
+                }
+            }.map { resource ->
+                resource.getAttribute("name")
+            }
+
+    private
+    fun NodeList.toElementList(): List<Element> =
+        ArrayList<Element>(length).apply {
+            for (idx in 0 until length) {
+                add(item(idx) as Element)
+            }
         }
 }
 

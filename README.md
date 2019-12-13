@@ -74,7 +74,7 @@ rat {
     // Fail the build on rat errors, defaults to true
     failOnError.set(false)
 
-    // Prints the complete plain text report, defaults to false
+    // Prints the list of files with unapproved licences to the console, defaults to false
     verbose.set(true) 
 }
 ```
