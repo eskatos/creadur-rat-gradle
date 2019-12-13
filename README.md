@@ -106,17 +106,17 @@ Execution failed for task ':rat'.
 
 ## Compatibility
 
-The plugin requires Gradle 4.7 or greater or Gradle 5.x.
+The plugin requires Gradle 4.7 or greater.
 
-The plugin requires Java 6 or greater, tested with up to Java 10 using Gradle 4.7 and Java 11 using Gradle >= 4.8.
+The plugin requires Java 6 or greater, tested with up to Java 10 using Gradle 4.7, with up to Java 11 using Gradle >= 4.8 and with up to Java 13 using Gradle >= 6.0.
 
 ### Plugin compatibility history
 
     Plugin version | Minimum | Maximum Gradle version
              0.5.3 |    4.7  | 6.x
              0.5.2 |    4.7  | 6.x
-             0.5.1 |    4.7  | 6.x
-             0.5.0 |    4.7  | 6.x
+             0.5.1 |    4.7  | 5.x
+             0.5.0 |    4.7  | 5.x
              0.4.0 |    4.7  | 5.x
              0.3.1 |   2.14  | 4.x
              0.3.0 |   2.14  | 4.x
