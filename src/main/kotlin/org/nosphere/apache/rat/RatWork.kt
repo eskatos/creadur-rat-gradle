@@ -139,9 +139,9 @@ open class RatWork @Inject constructor(
                 resource.childNodes.toElementList().any {
                     it.tagName == "license-approval" && it.getAttribute("name") == "false"
                 }
-            }.map { resource ->
-                resource.getAttribute("name")
             }
+            .map { it.getAttribute("name") }
+            .sorted()
 
     private
     fun NodeList.toElementList(): List<Element> =
