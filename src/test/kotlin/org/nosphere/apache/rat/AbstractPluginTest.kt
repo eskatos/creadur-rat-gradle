@@ -37,7 +37,7 @@ abstract class AbstractPluginTest(
         @JvmStatic
         fun testedGradleVersions() = listOf(
             "6.0",
-            "5.6.1",
+            "5.6.4",
             "5.5",
             "5.4",
             "5.3",
