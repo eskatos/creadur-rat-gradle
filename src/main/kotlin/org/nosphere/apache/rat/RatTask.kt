@@ -40,8 +40,8 @@ const val ratVersion = "0.13"
 
 @CacheableTask
 open class RatTask private constructor(
-        private val patternSet: PatternSet,
-        private val workerExecutor: WorkerExecutor
+    private val patternSet: PatternSet,
+    private val workerExecutor: WorkerExecutor
 ) : DefaultTask(), PatternFilterable by patternSet {
 
     @Inject
@@ -50,9 +50,9 @@ open class RatTask private constructor(
     companion object {
 
         fun newDefaultPatternSet() =
-                PatternSet().apply {
-                    exclude("**/.gradle/**")
-                }
+            PatternSet().apply {
+                exclude("**/.gradle/**")
+            }
     }
 
     @Console
@@ -115,31 +115,31 @@ open class RatTask private constructor(
     private
     fun resolveRatClasspath() = project.run {
         configurations.detachedConfiguration(
-                dependencies.create("org.apache.rat:apache-rat:$ratVersion")
+            dependencies.create("org.apache.rat:apache-rat:$ratVersion")
         ).files
     }
 
     private
     fun buildRatWorkSpec() = RatWorkSpec(
-            verbose = verbose.get(),
-            failOnError = failOnError.get(),
-            baseDir = inputDir.asFile.get(),
-            reportedFiles = inputFiles.files.filter { it.isFile },
-            excludeFile = excludeFile.orNull?.asFile,
-            stylesheet = stylesheet.asFile.orNull ?: defaultStylesheet(),
-            reportDirectory = reportDir.asFile.get()
+        verbose = verbose.get(),
+        failOnError = failOnError.get(),
+        baseDir = inputDir.asFile.get(),
+        reportedFiles = inputFiles.files.filter { it.isFile },
+        excludeFile = excludeFile.orNull?.asFile,
+        stylesheet = stylesheet.asFile.orNull ?: defaultStylesheet(),
+        reportDirectory = reportDir.asFile.get()
     )
 
     private
     fun defaultStylesheet() =
-            temporaryDir.resolve("default-stylesheet.xsl").apply {
-                parentFile.mkdirs()
-                RatTask::class.java.getResourceAsStream("apache-rat-output-to-html.xsl").buffered().use { input ->
-                    outputStream().buffered().use { output ->
-                        input.copyTo(output)
-                    }
+        temporaryDir.resolve("default-stylesheet.xsl").apply {
+            parentFile.mkdirs()
+            RatTask::class.java.getResourceAsStream("apache-rat-output-to-html.xsl").buffered().use { input ->
+                outputStream().buffered().use { output ->
+                    input.copyTo(output)
                 }
             }
+        }
 
     private
     object CurrentGradle {
