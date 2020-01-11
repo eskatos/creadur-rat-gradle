@@ -108,6 +108,7 @@ tasks.honkerGenNotice { footer = "This product includes software developed at\nT
 tasks.check { dependsOn(tasks.honkerCheck) }
 
 tasks.rat {
+    verbose.set(true)
     exclude(
         "README.md", "CODE_OF_CONDUCT.md",
         ".gradletasknamecache", "gradle/wrapper/**", "gradlew*", "build/**", // Gradle
