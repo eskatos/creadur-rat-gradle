@@ -70,6 +70,29 @@ open class RatTask private constructor(
         set(project.layout.projectDirectory)
     }
 
+    @get:Input
+    val addDefaultMatchers = project.objects.property<Boolean>().apply {
+        set(true)
+    }
+
+    @get:Nested
+    val substringMatchers = project.objects.listProperty<SubstringMatcher>().apply {
+        set(emptyList())
+    }
+
+    fun substringMatcher(licenseFamilyCategory: String, licenseFamilyName: String, vararg substrings: String) {
+        substringMatchers.add(SubstringMatcher(licenseFamilyCategory, licenseFamilyName, substrings.toList()))
+    }
+
+    @get:Input
+    val approvedLicenses = project.objects.listProperty<String>().apply {
+        set(emptyList())
+    }
+
+    fun approvedLicense(familyName: String) {
+        approvedLicenses.add(familyName)
+    }
+
     @Internal
     override fun getIncludes(): MutableSet<String> = patternSet.includes
 
@@ -123,6 +146,9 @@ open class RatTask private constructor(
     fun buildRatWorkSpec() = RatWorkSpec(
         verbose = verbose.get(),
         failOnError = failOnError.get(),
+        addDefaultMatchers = addDefaultMatchers.get(),
+        substringMatchers = substringMatchers.get(),
+        approvedLicenses = approvedLicenses.get(),
         baseDir = inputDir.asFile.get(),
         reportedFiles = inputFiles.files.filter { it.isFile },
         excludeFile = excludeFile.orNull?.asFile,

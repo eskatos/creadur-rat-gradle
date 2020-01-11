@@ -26,6 +26,15 @@ The plugin registers a task named `rat` that you can configure in your `build.gr
 ```kotlin
 tasks.rat {
 
+    // Use the default RAT license header matchers, defaults to `true`
+    addDefaultMatchers.set(false)
+
+    // Add custom substring license header matchers
+    substringMatcher("family", "category", "pattern-1", "pattern-2")
+
+    // Declare approved license families, if used, any non-declared family won't be approved
+    approvedLicense("MIT") 
+
     // Input directory, defaults to '.'
     inputDir.set("some/path")
 

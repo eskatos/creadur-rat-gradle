@@ -141,6 +141,84 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
     }
 
     @Test
+    fun `can declare custom license matchers`() {
+        withBuildScript("""
+            plugins {
+                id("base")
+                id("org.nosphere.apache.rat")
+            }
+            repositories {
+                gradlePluginPortal()
+            }
+            tasks.rat {
+                verbose.set(true)
+                excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']
+                substringMatcher("MIT", "The MIT License", "Permission is hereby granted, free of charge, to any person obtaining a copy")
+            }
+        """)
+        withFile("substring-mit.txt", """
+           // Permission is hereby granted, free of charge, to any person obtaining a copy
+        """)
+
+        build("check", "-s") {
+            assertRatTask(SUCCESS)
+            assertGeneratedAllReports()
+        }
+    }
+
+    @Test
+    fun `can disable default license matchers`() {
+        withBuildScript("""
+            plugins {
+                id("base")
+                id("org.nosphere.apache.rat")
+            }
+            repositories {
+                gradlePluginPortal()
+            }
+            tasks.rat {
+                verbose.set(true)
+                addDefaultMatchers.set(false)
+                excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']
+            }
+        """)
+        withFile("default-licensed.sh", """
+            ${apacheLicenseHeader.prependIndent("# ")}
+        """)
+
+        buildAndFail("check", "-s") {
+            assertRatTask(FAILED)
+            assertGeneratedAllReports()
+        }
+    }
+
+    @Test
+    fun `can declare what license families are approved`() {
+        withBuildScript("""
+            plugins {
+                id("base")
+                id("org.nosphere.apache.rat")
+            }
+            repositories {
+                gradlePluginPortal()
+            }
+            tasks.rat {
+                verbose.set(true)
+                approvedLicenses.add("MIT")
+                excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']
+            }
+        """)
+        withFile("default-licensed.sh", """
+            ${apacheLicenseHeader.prependIndent("# ")}
+        """)
+
+        buildAndFail("check", "-s") {
+            assertRatTask(FAILED)
+            assertGeneratedAllReports()
+        }
+    }
+
+    @Test
     fun `no deprecation warnings`() {
         withBuildScript("""
             plugins {
@@ -192,4 +270,24 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
     private
     val htmlReportFile
         get() = rootDir.resolve("build/reports/rat/index.html")
+
+    private
+    val apacheLicenseHeader = """
+        Licensed to the Apache Software Foundation (ASF) under one
+        or more contributor license agreements.  See the NOTICE file
+        distributed with this work for additional information
+        regarding copyright ownership.  The ASF licenses this file
+        to you under the Apache License, Version 2.0 (the
+        "License"); you may not use this file except in compliance
+        with the License.  You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+        Unless required by applicable law or agreed to in writing,
+        software distributed under the License is distributed on an
+        "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+        KIND, either express or implied.  See the License for the
+        specific language governing permissions and limitations
+        under the License.
+    """.trimIndent()
 }
