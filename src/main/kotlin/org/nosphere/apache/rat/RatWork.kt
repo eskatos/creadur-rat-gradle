@@ -21,8 +21,12 @@ package org.nosphere.apache.rat
 import org.apache.rat.Defaults
 import org.apache.rat.Report
 import org.apache.rat.ReportConfiguration
+import org.apache.rat.analysis.IHeaderMatcher
+import org.apache.rat.analysis.util.HeaderMatcherMultiplexer
+import org.apache.rat.anttasks.SubstringLicenseMatcher
 import org.apache.rat.api.RatException
 import org.apache.rat.document.impl.FileDocument
+import org.apache.rat.license.SimpleLicenseFamily
 import org.apache.rat.report.IReportable
 import org.apache.rat.report.RatReport
 import org.apache.rat.report.claim.ClaimStatistic
@@ -48,6 +52,9 @@ internal
 data class RatWorkSpec(
     val verbose: Boolean,
     val failOnError: Boolean,
+    val addDefaultMatchers: Boolean,
+    val substringMatchers: List<SubstringMatcher>,
+    val approvedLicenses: List<String>,
     val baseDir: File,
     val reportedFiles: List<File>,
     val excludeFile: File?,
@@ -69,9 +76,11 @@ open class RatWork @Inject constructor(
         val plainReportFile = spec.reportDirectory.resolve("rat-report.txt")
         val htmlReportFile = spec.reportDirectory.resolve("index.html")
 
+        val config = createReportConfiguration(spec)
+
         val stats = ClaimStatistic()
 
-        generateXmlReport(stats, xmlReportFile)
+        generateXmlReport(config, stats, xmlReportFile)
 
         transformReport(xmlReportFile, htmlReportFile, plainReportFile)
 
@@ -88,12 +97,34 @@ open class RatWork @Inject constructor(
     }
 
     private
-    fun generateXmlReport(stats: ClaimStatistic, xmlReportFile: File) {
+    fun createReportConfiguration(spec: RatWorkSpec): ReportConfiguration =
+        ReportConfiguration().apply {
 
-        val config = ReportConfiguration().apply {
-            headerMatcher = Defaults.createDefaultMatcher()
-            isApproveDefaultLicenses = true
+            val matchers = mutableListOf<IHeaderMatcher>()
+            if (spec.addDefaultMatchers) matchers.add(Defaults.createDefaultMatcher())
+            spec.substringMatchers.forEach { substringMatcher ->
+                matchers.add(SubstringLicenseMatcher().apply {
+                    licenseFamilyCategory = substringMatcher.licenseFamilyCategory
+                    licenseFamilyName = substringMatcher.licenseFamilyName
+                    substringMatcher.substrings.forEach { substring ->
+                        addConfiguredPattern(SubstringLicenseMatcher.Pattern().apply {
+                            this.substring = substring
+                        })
+                    }
+                })
+            }
+            headerMatcher = HeaderMatcherMultiplexer(matchers)
+
+            if (spec.approvedLicenses.isEmpty()) {
+                isApproveDefaultLicenses = true
+            } else {
+                isApproveDefaultLicenses = false
+                setApprovedLicenseNames(spec.approvedLicenses.map { SimpleLicenseFamily(it) })
+            }
         }
+
+    private
+    fun generateXmlReport(config: ReportConfiguration, stats: ClaimStatistic, xmlReportFile: File) {
 
         xmlReportFile.bufferedWriter().use { xmlFileWriter ->
             val writer = XmlWriter(xmlFileWriter)
