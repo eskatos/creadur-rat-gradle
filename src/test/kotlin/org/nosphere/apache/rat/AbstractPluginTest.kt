@@ -43,6 +43,10 @@ abstract class AbstractPluginTest(
         fun testMatrix() = listOf(
             TestMatrix(GradleVersion.version("6.5"), true),
             TestMatrix(GradleVersion.version("6.5")),
+            TestMatrix(GradleVersion.version("6.4.1")),
+            TestMatrix(GradleVersion.version("6.3")),
+            TestMatrix(GradleVersion.version("6.2.2")),
+            TestMatrix(GradleVersion.version("6.1.1")),
             TestMatrix(GradleVersion.version("6.0"))
         )
     }
