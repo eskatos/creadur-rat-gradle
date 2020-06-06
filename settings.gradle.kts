@@ -17,4 +17,19 @@
  * under the License.
  */
 
+plugins {
+    `gradle-enterprise`
+}
+
 rootProject.name = "creadur-rat-gradle"
+
+val isCI = System.getenv("CI") == "true"
+if (isCI) {
+    gradleEnterprise {
+        buildScan {
+            termsOfServiceUrl = "https://gradle.com/terms-of-service"
+            termsOfServiceAgree = "yes"
+            tag("CI")
+        }
+    }
+}

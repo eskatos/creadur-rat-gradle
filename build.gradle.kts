@@ -18,7 +18,6 @@
  */
 
 plugins {
-    `build-scan`
     `kotlin-dsl`
     `maven-publish`
     id("com.gradle.plugin-publish") version "0.10.1"
@@ -28,16 +27,6 @@ plugins {
 
 group = "org.nosphere.apache"
 version = "0.7.0-SNAPSHOT"
-
-val isCI = System.getenv("CI") == "true"
-
-if (isCI) {
-    buildScan {
-        termsOfServiceUrl = "https://gradle.com/terms-of-service"
-        termsOfServiceAgree = "yes"
-        tag("CI")
-    }
-}
 
 pluginBundle {
     website = "https://github.com/eskatos/creadur-rat-gradle"
