@@ -20,6 +20,7 @@ package org.nosphere.apache.rat
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileTree
+import org.gradle.api.model.ObjectFactory
 import org.gradle.api.reporting.ReportingExtension
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.Console
@@ -38,11 +39,15 @@ const val ratVersion = "0.13"
 @CacheableTask
 open class RatTask private constructor(
     private val patternSet: PatternSet,
+    private val objects: ObjectFactory,
     private val workerExecutor: WorkerExecutor
 ) : DefaultTask(), PatternFilterable by patternSet {
 
     @Inject
-    constructor(workerExecutor: WorkerExecutor) : this(newDefaultPatternSet(), workerExecutor)
+    constructor(
+        objects: ObjectFactory,
+        workerExecutor: WorkerExecutor
+    ) : this(newDefaultPatternSet(), objects, workerExecutor)
 
     companion object {
 
@@ -53,27 +58,27 @@ open class RatTask private constructor(
     }
 
     @Console
-    val verbose = project.objects.property<Boolean>().apply {
+    val verbose = objects.property<Boolean>().apply {
         set(false)
     }
 
     @Input
-    val failOnError = project.objects.property<Boolean>().apply {
+    val failOnError = objects.property<Boolean>().apply {
         set(true)
     }
 
     @Internal
-    val inputDir = project.objects.directoryProperty().apply {
+    val inputDir = objects.directoryProperty().apply {
         set(project.layout.projectDirectory)
     }
 
     @get:Input
-    val addDefaultMatchers = project.objects.property<Boolean>().apply {
+    val addDefaultMatchers = objects.property<Boolean>().apply {
         set(true)
     }
 
     @get:Nested
-    val substringMatchers = project.objects.listProperty<SubstringMatcher>().apply {
+    val substringMatchers = objects.listProperty<SubstringMatcher>().apply {
         set(emptyList())
     }
 
@@ -82,7 +87,7 @@ open class RatTask private constructor(
     }
 
     @get:Input
-    val approvedLicenses = project.objects.listProperty<String>().apply {
+    val approvedLicenses = objects.listProperty<String>().apply {
         set(emptyList())
     }
 
@@ -110,15 +115,15 @@ open class RatTask private constructor(
     @InputFile
     @Optional
     @PathSensitive(PathSensitivity.NONE)
-    val excludeFile = project.objects.fileProperty()
+    val excludeFile = objects.fileProperty()
 
     @InputFile
     @Optional
     @PathSensitive(PathSensitivity.NONE)
-    val stylesheet = project.objects.fileProperty()
+    val stylesheet = objects.fileProperty()
 
     @OutputDirectory
-    val reportDir = project.objects.directoryProperty().apply {
+    val reportDir = objects.directoryProperty().apply {
         set(project.layout.projectDirectory.dir(project.provider {
             project.the<ReportingExtension>().file(name).canonicalPath
         }))
