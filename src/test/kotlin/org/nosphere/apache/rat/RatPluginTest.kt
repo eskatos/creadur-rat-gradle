@@ -33,13 +33,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-
 @RunWith(Parameterized::class)
-class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
+class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
 
     @Test
     fun `success, up-to-date and from-cache`() {
-        withBuildScript("""
+        withBuildScript(
+            """
             plugins {
                 id("base")
                 id("org.nosphere.apache.rat")
@@ -57,7 +57,8 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
                     'no-license-file.txt'
                 )
             }
-        """)
+            """
+        )
         withFile("no-license-file.txt", "Nothing here.")
 
         build("check") {
@@ -81,7 +82,8 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
 
     @Test
     fun `fail the build when finding a file with unapproved or unknown license`() {
-        withBuildScript("""
+        withBuildScript(
+            """
             plugins {
                 id("base")
                 id("org.nosphere.apache.rat")
@@ -95,7 +97,8 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
                 ]
             }
-        """)
+            """
+        )
         withFile("no-license-file.txt", "Nothing here.")
 
         buildAndFail("check") {
@@ -111,7 +114,8 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
 
     @Test
     fun `do not fail but report errors when failOnError is false`() {
-        withBuildScript("""
+        withBuildScript(
+            """
             plugins {
                 id("base")
                 id("org.nosphere.apache.rat")
@@ -126,7 +130,8 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
                 ]
             }
-        """)
+            """
+        )
         withFile("no-license-file.txt", "Nothing here.")
 
         build("check") {
@@ -142,7 +147,8 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
 
     @Test
     fun `can declare custom license matchers`() {
-        withBuildScript("""
+        withBuildScript(
+            """
             plugins {
                 id("base")
                 id("org.nosphere.apache.rat")
@@ -155,10 +161,12 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
                 excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']
                 substringMatcher("MIT", "The MIT License", "Permission is hereby granted, free of charge, to any person obtaining a copy")
             }
-        """)
-        withFile("substring-mit.txt", """
-           // Permission is hereby granted, free of charge, to any person obtaining a copy
-        """)
+            """
+        )
+        withFile(
+            "substring-mit.txt",
+            "// Permission is hereby granted, free of charge, to any person obtaining a copy"
+        )
 
         build("check", "-s") {
             assertRatTask(SUCCESS)
@@ -168,7 +176,8 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
 
     @Test
     fun `can disable default license matchers`() {
-        withBuildScript("""
+        withBuildScript(
+            """
             plugins {
                 id("base")
                 id("org.nosphere.apache.rat")
@@ -181,10 +190,9 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
                 addDefaultMatchers.set(false)
                 excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']
             }
-        """)
-        withFile("default-licensed.sh", """
-            ${apacheLicenseHeader.prependIndent("# ")}
-        """)
+            """
+        )
+        withFile("default-licensed.sh", apacheLicenseHeader.prependIndent("# "))
 
         buildAndFail("check", "-s") {
             assertRatTask(FAILED)
@@ -194,7 +202,8 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
 
     @Test
     fun `can declare what license families are approved`() {
-        withBuildScript("""
+        withBuildScript(
+            """
             plugins {
                 id("base")
                 id("org.nosphere.apache.rat")
@@ -207,10 +216,9 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
                 approvedLicenses.add("MIT")
                 excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']
             }
-        """)
-        withFile("default-licensed.sh", """
-            ${apacheLicenseHeader.prependIndent("# ")}
-        """)
+            """
+        )
+        withFile("default-licensed.sh", apacheLicenseHeader.prependIndent("# "))
 
         buildAndFail("check", "-s") {
             assertRatTask(FAILED)
@@ -220,7 +228,8 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
 
     @Test
     fun `no deprecation warnings`() {
-        withBuildScript("""
+        withBuildScript(
+            """
             plugins {
                 id("base")
                 id("org.nosphere.apache.rat")
@@ -233,7 +242,8 @@ class RatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',
                 ]
             }
-        """)
+            """
+        )
 
         build("rat", "--warning-mode=all") {
             assertRatTask(SUCCESS)

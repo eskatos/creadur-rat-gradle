@@ -23,12 +23,13 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
 @RunWith(Parameterized::class)
-class BaseRatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersion) {
+class BaseRatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
 
     @Test
     fun `do not create rat task `() {
 
-        withBuildScript("""
+        withBuildScript(
+            """
             plugins {
                 id("org.nosphere.apache.rat-base")
             }
@@ -36,11 +37,13 @@ class BaseRatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersio
                 gradlePluginPortal()
             }
             task("assertion") {
+                def hasRat = project.tasks.findByName('rat') != null
                 doLast {
-                  assert project.tasks.findByName('rat') == null
+                  assert !hasRat
                 }
             }
-        """)
+            """
+        )
 
         build("assertion")
     }
@@ -48,7 +51,8 @@ class BaseRatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersio
     @Test
     fun `allow creation of arbitrary rat tasks `() {
 
-        withBuildScript("""
+        withBuildScript(
+            """
             plugins {
                 id("org.nosphere.apache.rat-base")
             }
@@ -62,7 +66,8 @@ class BaseRatPluginTest(gradleVersion: String) : AbstractPluginTest(gradleVersio
                     'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'
                 ]
             }
-        """)
+            """
+        )
 
         build("someRat")
     }

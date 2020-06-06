@@ -26,18 +26,23 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runners.Parameterized
 import java.io.File
 
-
 abstract class AbstractPluginTest(
-    protected val gradleVersion: String
+    private val testMatrix: TestMatrix
 ) {
+
+    data class TestMatrix(
+        val gradleVersion: String,
+        val configurationCache: Boolean
+    )
 
     companion object {
 
-        @Parameterized.Parameters(name = "Gradle {0}")
+        @Parameterized.Parameters(name = "{0}")
         @JvmStatic
-        fun testedGradleVersions() = listOf(
-            "6.5",
-            "6.0"
+        fun testMatrix() = listOf(
+            TestMatrix("6.5", true),
+            TestMatrix("6.5", false),
+            TestMatrix("6.0", false)
         )
     }
 
@@ -78,11 +83,20 @@ abstract class AbstractPluginTest(
     private
     fun gradleRunnerFor(vararg arguments: String) =
         GradleRunner.create()
-            .withGradleVersion(gradleVersion)
+            .withGradleVersion(testMatrix.gradleVersion)
             .withPluginClasspath()
             .forwardOutput()
             .withProjectDir(rootDir)
-            .withArguments(*(arguments.toList().plus("-s")).toTypedArray())
+            .withArguments(*(arguments.toList().plus(extraArguments)).toTypedArray())
+
+    private
+    val extraArguments: Sequence<String>
+        get() = sequence {
+            yield("-s")
+            if (testMatrix.configurationCache) {
+                yield("--configuration-cache=on")
+            }
+        }
 
     protected
     fun BuildResult.outcomeOf(path: String) =
