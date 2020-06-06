@@ -32,51 +32,53 @@ import org.apache.rat.report.RatReport
 import org.apache.rat.report.claim.ClaimStatistic
 import org.apache.rat.report.xml.XmlReportFactory
 import org.apache.rat.report.xml.writer.impl.base.XmlWriter
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.Property
 
 import org.gradle.internal.logging.ConsoleRenderer
+import org.gradle.workers.WorkAction
+import org.gradle.workers.WorkParameters
 
 import org.w3c.dom.Element
 import org.w3c.dom.NodeList
 
 import java.io.File
 import java.io.FilenameFilter
-import java.io.Serializable
-import javax.inject.Inject
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.stream.StreamResult
 import javax.xml.transform.stream.StreamSource
 
+internal
+abstract class RatWorkSpec : WorkParameters {
+    abstract val verbose: Property<Boolean>
+    abstract val failOnError: Property<Boolean>
+    abstract val addDefaultMatchers: Property<Boolean>
+    abstract val substringMatchers: ListProperty<SubstringMatcher>
+    abstract val approvedLicenses: ListProperty<String>
+    abstract val baseDir: DirectoryProperty
+    abstract val reportedFiles: ConfigurableFileCollection
+    abstract val excludeFile: RegularFileProperty
+    abstract val stylesheet: RegularFileProperty
+    abstract val reportDirectory: DirectoryProperty
+}
 
 internal
-data class RatWorkSpec(
-    val verbose: Boolean,
-    val failOnError: Boolean,
-    val addDefaultMatchers: Boolean,
-    val substringMatchers: List<SubstringMatcher>,
-    val approvedLicenses: List<String>,
-    val baseDir: File,
-    val reportedFiles: List<File>,
-    val excludeFile: File?,
-    val stylesheet: File,
-    val reportDirectory: File
-) : Serializable
+abstract class RatWork : WorkAction<RatWorkSpec> {
 
+    override fun execute() {
 
-internal
-open class RatWork @Inject constructor(
-    private val spec: RatWorkSpec
-) : Runnable {
+        val reportDir = parameters.reportDirectory.asFile.get()
+        reportDir.mkdirs()
 
-    override fun run() {
+        val xmlReportFile = reportDir.resolve("rat-report.xml")
+        val plainReportFile = reportDir.resolve("rat-report.txt")
+        val htmlReportFile = reportDir.resolve("index.html")
 
-        spec.reportDirectory.mkdirs()
-
-        val xmlReportFile = spec.reportDirectory.resolve("rat-report.xml")
-        val plainReportFile = spec.reportDirectory.resolve("rat-report.txt")
-        val htmlReportFile = spec.reportDirectory.resolve("index.html")
-
-        val config = createReportConfiguration(spec)
+        val config = createReportConfiguration(parameters)
 
         val stats = ClaimStatistic()
 
@@ -85,13 +87,13 @@ open class RatWork @Inject constructor(
         transformReport(xmlReportFile, htmlReportFile, plainReportFile)
 
         if (stats.numUnApproved > 0) {
-            if (spec.verbose) {
+            if (parameters.verbose.get()) {
                 System.err.println(verboseFailureOutput(xmlReportFile))
             }
             val message = "Apache Rat audit failure - " +
                 "${stats.numUnApproved} unapproved license${if (stats.numUnApproved > 1) "s" else ""}\n" +
                 "\tSee ${ConsoleRenderer().asClickableFileUrl(htmlReportFile)}"
-            if (spec.failOnError) throw RatException(message)
+            if (parameters.failOnError.get()) throw RatException(message)
             else System.err.println(message)
         }
     }
@@ -101,8 +103,8 @@ open class RatWork @Inject constructor(
         ReportConfiguration().apply {
 
             val matchers = mutableListOf<IHeaderMatcher>()
-            if (spec.addDefaultMatchers) matchers.add(Defaults.createDefaultMatcher())
-            spec.substringMatchers.forEach { substringMatcher ->
+            if (spec.addDefaultMatchers.get()) matchers.add(Defaults.createDefaultMatcher())
+            spec.substringMatchers.get().forEach { substringMatcher ->
                 matchers.add(SubstringLicenseMatcher().apply {
                     licenseFamilyCategory = substringMatcher.licenseFamilyCategory
                     licenseFamilyName = substringMatcher.licenseFamilyName
@@ -115,11 +117,11 @@ open class RatWork @Inject constructor(
             }
             headerMatcher = HeaderMatcherMultiplexer(matchers)
 
-            if (spec.approvedLicenses.isEmpty()) {
+            if (spec.approvedLicenses.get().isEmpty()) {
                 isApproveDefaultLicenses = true
             } else {
                 isApproveDefaultLicenses = false
-                setApprovedLicenseNames(spec.approvedLicenses.map { SimpleLicenseFamily(it) })
+                setApprovedLicenseNames(spec.approvedLicenses.get().map { SimpleLicenseFamily(it) })
             }
         }
 
@@ -130,7 +132,7 @@ open class RatWork @Inject constructor(
             val writer = XmlWriter(xmlFileWriter)
             XmlReportFactory.createStandardReport(writer, stats, config).run {
                 startReport()
-                FilesReportable(spec.reportedFiles, spec.excludeFile).run(this)
+                FilesReportable(parameters.reportedFiles.files.toList(), parameters.excludeFile.asFile.orNull).run(this)
                 endReport()
             }
             writer.closeDocument()
@@ -141,7 +143,7 @@ open class RatWork @Inject constructor(
     fun transformReport(xmlReportFile: File, htmlReportFile: File, plainReportFile: File) =
         TransformerFactory.newInstance().let { factory ->
 
-            factory.newTransformer(StreamSource(spec.stylesheet)).transform(
+            factory.newTransformer(StreamSource(parameters.stylesheet.asFile.get())).transform(
                 StreamSource(xmlReportFile),
                 StreamResult(htmlReportFile)
             )

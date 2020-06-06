@@ -67,7 +67,8 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
         }
 
         build("check") {
-            assertRatTask(UP_TO_DATE)
+            if (testMatrix.isGradleMin63) assertRatTask(UP_TO_DATE)
+            else assertRatTask(SUCCESS)
         }
 
         build("clean", "check", "--build-cache", "-g", rootDir.resolve("guh").canonicalPath) {
@@ -141,7 +142,8 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
         }
 
         build("check") {
-            assertRatTask(UP_TO_DATE)
+            if (testMatrix.isGradleMin63) assertRatTask(UP_TO_DATE)
+            else assertRatTask(SUCCESS)
         }
     }
 

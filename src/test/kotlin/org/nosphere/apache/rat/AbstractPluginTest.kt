@@ -20,6 +20,7 @@ package org.nosphere.apache.rat
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
+import org.gradle.util.GradleVersion
 import org.junit.Before
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -27,12 +28,12 @@ import org.junit.runners.Parameterized
 import java.io.File
 
 abstract class AbstractPluginTest(
-    private val testMatrix: TestMatrix
+    protected val testMatrix: TestMatrix
 ) {
 
     data class TestMatrix(
-        val gradleVersion: String,
-        val configurationCache: Boolean
+        val gradleVersion: GradleVersion,
+        val configurationCache: Boolean = false
     )
 
     companion object {
@@ -40,9 +41,9 @@ abstract class AbstractPluginTest(
         @Parameterized.Parameters(name = "{0}")
         @JvmStatic
         fun testMatrix() = listOf(
-            TestMatrix("6.5", true),
-            TestMatrix("6.5", false),
-            TestMatrix("6.0", false)
+            TestMatrix(GradleVersion.version("6.5"), true),
+            TestMatrix(GradleVersion.version("6.5")),
+            TestMatrix(GradleVersion.version("6.0"))
         )
     }
 
@@ -83,7 +84,7 @@ abstract class AbstractPluginTest(
     private
     fun gradleRunnerFor(vararg arguments: String) =
         GradleRunner.create()
-            .withGradleVersion(testMatrix.gradleVersion)
+            .withGradleVersion(testMatrix.gradleVersion.version)
             .withPluginClasspath()
             .forwardOutput()
             .withProjectDir(rootDir)
@@ -101,4 +102,12 @@ abstract class AbstractPluginTest(
     protected
     fun BuildResult.outcomeOf(path: String) =
         task(path)?.outcome
+
+    protected
+    val TestMatrix.isGradleMin63
+        get() = gradleVersion.isGreaterOrEqualThan("6.3")
+
+    protected
+    fun GradleVersion.isGreaterOrEqualThan(version: String) =
+        this >= GradleVersion.version(version)
 }

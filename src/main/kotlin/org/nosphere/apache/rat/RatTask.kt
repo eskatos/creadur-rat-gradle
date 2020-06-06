@@ -19,16 +19,19 @@
 package org.nosphere.apache.rat
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.Directory
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
+import org.gradle.api.file.ProjectLayout
 import org.gradle.api.model.ObjectFactory
+import org.gradle.api.provider.Provider
+import org.gradle.api.provider.ProviderFactory
 import org.gradle.api.reporting.ReportingExtension
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.Console
 import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.api.tasks.util.PatternSet
 import org.gradle.workers.WorkerExecutor
-import org.gradle.workers.IsolationMode.PROCESS
 
 import org.gradle.kotlin.dsl.*
 
@@ -40,15 +43,19 @@ const val ratVersion = "0.13"
 @CacheableTask
 open class RatTask private constructor(
     private val patternSet: PatternSet,
+    private val providers: ProviderFactory,
     private val objects: ObjectFactory,
+    private val layout: ProjectLayout,
     private val workerExecutor: WorkerExecutor
 ) : DefaultTask(), PatternFilterable by patternSet {
 
     @Inject
     constructor(
+        providers: ProviderFactory,
         objects: ObjectFactory,
+        layout: ProjectLayout,
         workerExecutor: WorkerExecutor
-    ) : this(newDefaultPatternSet(), objects, workerExecutor)
+    ) : this(newDefaultPatternSet(), providers, objects, layout, workerExecutor)
 
     companion object {
 
@@ -70,7 +77,7 @@ open class RatTask private constructor(
 
     @Internal
     val inputDir = objects.directoryProperty().apply {
-        set(project.layout.projectDirectory)
+        set(layout.projectDirectory)
     }
 
     @get:Input
@@ -126,12 +133,13 @@ open class RatTask private constructor(
 
     @OutputDirectory
     val reportDir = objects.directoryProperty().apply {
-        set(project.layout.projectDirectory.dir(project.provider {
+        set(layout.projectDirectory.dir(providers.provider {
             project.the<ReportingExtension>().file(name).canonicalPath
         }))
     }
 
-    @get:Internal
+    @get:InputFiles
+    @get:Classpath
     internal
     val ratClasspath: FileCollection = objects.fileCollection().apply {
         from(project.run {
@@ -143,34 +151,36 @@ open class RatTask private constructor(
 
     @TaskAction
     @Suppress("unused")
-    fun rat(): Unit = workerExecutor.submit(RatWork::class) {
-        isolationMode = PROCESS
-        classpath(ratClasspath)
-        params(buildRatWorkSpec())
-    }
-
-    private
-    fun buildRatWorkSpec() = RatWorkSpec(
-        verbose = verbose.get(),
-        failOnError = failOnError.get(),
-        addDefaultMatchers = addDefaultMatchers.get(),
-        substringMatchers = substringMatchers.get(),
-        approvedLicenses = approvedLicenses.get(),
-        baseDir = inputDir.asFile.get(),
-        reportedFiles = inputFiles.files.filter { it.isFile },
-        excludeFile = excludeFile.orNull?.asFile,
-        stylesheet = stylesheet.asFile.orNull ?: defaultStylesheet(),
-        reportDirectory = reportDir.asFile.get()
-    )
+    fun rat(): Unit =
+        workerExecutor.processIsolation {
+            classpath.from(ratClasspath)
+        }.submit(RatWork::class) {
+            verbose.set(this@RatTask.verbose)
+            failOnError.set(this@RatTask.failOnError)
+            addDefaultMatchers.set(this@RatTask.addDefaultMatchers)
+            substringMatchers.set(this@RatTask.substringMatchers)
+            approvedLicenses.set(this@RatTask.approvedLicenses)
+            baseDir.set(this@RatTask.inputDir)
+            reportedFiles.from(this@RatTask.inputFiles)
+            excludeFile.set(this@RatTask.excludeFile)
+            stylesheet.set(this@RatTask.stylesheet.takeIf { it.isPresent } ?: defaultStylesheet())
+            reportDirectory.set(this@RatTask.reportDir)
+        }
 
     private
     fun defaultStylesheet() =
-        temporaryDir.resolve("default-stylesheet.xsl").apply {
-            parentFile.mkdirs()
-            RatTask::class.java.getResourceAsStream("apache-rat-output-to-html.xsl").buffered().use { input ->
-                outputStream().buffered().use { output ->
-                    input.copyTo(output)
+        temporaryDirectory.map { tmpDir ->
+            tmpDir.file("default-stylesheet.xsl").apply {
+                asFile.parentFile.mkdirs()
+                RatTask::class.java.getResourceAsStream("apache-rat-output-to-html.xsl").buffered().use { input ->
+                    asFile.outputStream().buffered().use { output ->
+                        input.copyTo(output)
+                    }
                 }
             }
         }
+
+    private
+    val temporaryDirectory: Provider<Directory>
+        get() = layout.dir(providers.provider { temporaryDir })
 }
