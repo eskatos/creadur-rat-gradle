@@ -36,18 +36,8 @@ abstract class AbstractPluginTest(
         @Parameterized.Parameters(name = "Gradle {0}")
         @JvmStatic
         fun testedGradleVersions() = listOf(
-            "6.0",
-            "5.6.4",
-            "5.5",
-            "5.4",
-            "5.3",
-            "5.2",
-            "5.1",
-            "5.0",
-            "4.10.2",
-            "4.9",
-            "4.8",
-            "4.7"
+            "6.5",
+            "6.0"
         )
     }
 

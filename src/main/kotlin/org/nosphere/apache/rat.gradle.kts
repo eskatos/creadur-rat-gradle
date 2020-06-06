@@ -20,35 +20,19 @@ package org.nosphere.apache
 
 import org.nosphere.apache.rat.RatTask
 
-import org.gradle.util.GradleVersion
-
-
 plugins {
     id("org.nosphere.apache.rat-base")
 }
-
 
 val ratTaskConfiguration: RatTask.() -> Unit = {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs Apache Rat audit tool"
 }
 
+val rat = tasks.register("rat", RatTask::class.java, ratTaskConfiguration)
 
-if (GradleVersion.current() >= GradleVersion.version("4.9")) {
-
-    val rat = tasks.register("rat", RatTask::class.java, ratTaskConfiguration)
-
-    plugins.withType(LifecycleBasePlugin::class.java) {
-        tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure {
-            dependsOn(rat)
-        }
-    }
-
-} else {
-
-    val rat = tasks.create("rat", RatTask::class.java, ratTaskConfiguration)
-
-    plugins.withType(LifecycleBasePlugin::class.java) {
-        tasks[LifecycleBasePlugin.CHECK_TASK_NAME].dependsOn(rat)
+plugins.withType(LifecycleBasePlugin::class.java) {
+    tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure {
+        dependsOn(rat)
     }
 }

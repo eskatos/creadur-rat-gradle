@@ -25,7 +25,6 @@ import org.gradle.api.tasks.*
 import org.gradle.api.tasks.Console
 import org.gradle.api.tasks.util.PatternFilterable
 import org.gradle.api.tasks.util.PatternSet
-import org.gradle.util.GradleVersion
 import org.gradle.workers.WorkerExecutor
 import org.gradle.workers.IsolationMode.PROCESS
 
@@ -33,10 +32,8 @@ import org.gradle.kotlin.dsl.*
 
 import javax.inject.Inject
 
-
 private
 const val ratVersion = "0.13"
-
 
 @CacheableTask
 open class RatTask private constructor(
@@ -66,7 +63,7 @@ open class RatTask private constructor(
     }
 
     @Internal
-    val inputDir = newInputDirectoryProperty().apply {
+    val inputDir = project.objects.directoryProperty().apply {
         set(project.layout.projectDirectory)
     }
 
@@ -113,15 +110,15 @@ open class RatTask private constructor(
     @InputFile
     @Optional
     @PathSensitive(PathSensitivity.NONE)
-    val excludeFile = newInputFileProperty()
+    val excludeFile = project.objects.fileProperty()
 
     @InputFile
     @Optional
     @PathSensitive(PathSensitivity.NONE)
-    val stylesheet = newInputFileProperty()
+    val stylesheet = project.objects.fileProperty()
 
     @OutputDirectory
-    val reportDir = newOutputDirectoryProperty().apply {
+    val reportDir = project.objects.directoryProperty().apply {
         set(project.layout.projectDirectory.dir(project.provider {
             project.the<ReportingExtension>().file(name).canonicalPath
         }))
@@ -166,27 +163,4 @@ open class RatTask private constructor(
                 }
             }
         }
-
-    private
-    object CurrentGradle {
-        val isLessThanFiveZero = GradleVersion.current() < GradleVersion.version("5.0")
-    }
-
-    private
-    fun newInputFileProperty() = when {
-        CurrentGradle.isLessThanFiveZero -> newInputFile()
-        else -> project.objects.fileProperty()
-    }
-
-    private
-    fun newInputDirectoryProperty() = when {
-        CurrentGradle.isLessThanFiveZero -> newInputDirectory()
-        else -> project.objects.directoryProperty()
-    }
-
-    private
-    fun newOutputDirectoryProperty() = when {
-        CurrentGradle.isLessThanFiveZero -> newOutputDirectory()
-        else -> project.objects.directoryProperty()
-    }
 }
