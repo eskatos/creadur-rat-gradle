@@ -65,17 +65,17 @@ open class RatTask private constructor(
             }
     }
 
-    @Console
+    @get:Console
     val verbose = objects.property<Boolean>().apply {
         set(false)
     }
 
-    @Input
+    @get:Input
     val failOnError = objects.property<Boolean>().apply {
         set(true)
     }
 
-    @Internal
+    @get:Internal
     val inputDir = objects.directoryProperty().apply {
         set(layout.projectDirectory)
     }
@@ -121,17 +121,17 @@ open class RatTask private constructor(
                 }
             }
 
-    @InputFile
-    @Optional
-    @PathSensitive(PathSensitivity.NONE)
+    @get:InputFile
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.NONE)
     val excludeFile = objects.fileProperty()
 
-    @InputFile
-    @Optional
-    @PathSensitive(PathSensitivity.NONE)
+    @get:InputFile
+    @get:Optional
+    @get:PathSensitive(PathSensitivity.NONE)
     val stylesheet = objects.fileProperty()
 
-    @OutputDirectory
+    @get:OutputDirectory
     val reportDir = objects.directoryProperty().apply {
         set(layout.projectDirectory.dir(providers.provider {
             project.the<ReportingExtension>().file(name).canonicalPath
