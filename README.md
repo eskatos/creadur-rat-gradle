@@ -33,7 +33,7 @@ tasks.rat {
     substringMatcher("family", "category", "pattern-1", "pattern-2")
 
     // Declare approved license families, if used, any non-declared family won't be approved
-    approvedLicense("MIT") 
+    approvedLicense("MIT")
 
     // Input directory, defaults to '.'
     inputDir.set("some/path")
@@ -84,7 +84,7 @@ rat {
     failOnError.set(false)
 
     // Prints the list of files with unapproved licences to the console, defaults to false
-    verbose.set(true) 
+    verbose.set(true)
 }
 ```
 
@@ -113,22 +113,17 @@ Execution failed for task ':rat'.
 ![Apache Rat HTML Report](src/docs/resources/html_report_header.png "Apache Rat HTML Report")
 
 
-## Compatibility
+## Compatibility matrix
 
-The plugin requires Gradle 4.7 or greater.
-
-The plugin requires Java 6 or greater, tested with up to Java 10 using Gradle 4.7, with up to Java 11 using Gradle >= 4.8 and with up to Java 13 using Gradle >= 6.0.
-
-### Plugin compatibility history
-
-    Plugin version | Minimum | Maximum Gradle version
-             0.6.0 |    4.7  | 6.x
-             0.5.3 |    4.7  | 6.x
-             0.5.2 |    4.7  | 6.x
-             0.5.1 |    4.7  | 5.x
-             0.5.0 |    4.7  | 5.x
-             0.4.0 |    4.7  | 5.x
-             0.3.1 |   2.14  | 4.x
-             0.3.0 |   2.14  | 4.x
-             0.2.0 |   2.14  | 4.x
-             0.1.0 |   2.14  | 4.x
+| Plugin | Min Java | Min Gradle | Max Gradle
+| --- | --- | --- | ---
+| `0.6.0` | `1.6` | `4.7` | `6.x`
+| `0.5.3` | `1.6` | `4.7` | `6.x`
+| `0.5.2` | `1.6` | `4.7` | `6.x`
+| `0.5.1` | `1.6` | `4.7` | `5.x`
+| `0.5.0` | `1.6` | `4.7` | `5.x`
+| `0.4.0` | `1.6` | `4.7` | `5.x`
+| `0.3.1` | `1.6` | `2.14` | `4.x`
+| `0.3.0` | `1.6` | `2.14` | `4.x`
+| `0.2.0` | `1.6` | `2.14` | `4.x`
+| `0.1.0` | `1.6` | `2.14` | `4.x` 
