@@ -19,6 +19,7 @@
 package org.nosphere.apache.rat
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.reporting.ReportingExtension
@@ -106,7 +107,8 @@ open class RatTask private constructor(
     @Suppress("unused")
     val inputFiles: FileTree
         get() =
-            project.fileTree(inputDir.get().asFile) {
+            objects.fileTree().apply {
+                from(inputDir.get().asFile)
                 if (!patternSet.isEmpty) {
                     include(patternSet.asSpec)
                 }
@@ -129,19 +131,22 @@ open class RatTask private constructor(
         }))
     }
 
+    @get:Internal
+    internal
+    val ratClasspath: FileCollection = objects.fileCollection().apply {
+        from(project.run {
+            configurations.detachedConfiguration(
+                dependencies.create("org.apache.rat:apache-rat:$ratVersion")
+            )
+        })
+    }
+
     @TaskAction
     @Suppress("unused")
     fun rat(): Unit = workerExecutor.submit(RatWork::class) {
         isolationMode = PROCESS
-        classpath(resolveRatClasspath())
+        classpath(ratClasspath)
         params(buildRatWorkSpec())
-    }
-
-    private
-    fun resolveRatClasspath() = project.run {
-        configurations.detachedConfiguration(
-            dependencies.create("org.apache.rat:apache-rat:$ratVersion")
-        ).files
     }
 
     private
