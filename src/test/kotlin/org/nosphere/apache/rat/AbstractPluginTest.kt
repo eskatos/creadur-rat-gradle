@@ -41,7 +41,8 @@ abstract class AbstractPluginTest(
         @Parameterized.Parameters(name = "{0}")
         @JvmStatic
         fun testMatrix() = listOf(
-            TestMatrix(GradleVersion.version("6.5"), true),
+            TestMatrix(GradleVersion.version("7.0-milestone-3"), true),
+            TestMatrix(GradleVersion.version("6.8.3"), true),
             TestMatrix(GradleVersion.version("6.5")),
             TestMatrix(GradleVersion.version("6.4.1")),
             TestMatrix(GradleVersion.version("6.3")),
@@ -99,7 +100,7 @@ abstract class AbstractPluginTest(
         get() = sequence {
             yield("-s")
             if (testMatrix.configurationCache) {
-                yield("--configuration-cache=on")
+                yield("--configuration-cache")
             }
         }
 
