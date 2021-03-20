@@ -59,6 +59,7 @@ open class RatTask private constructor(
 
     companion object {
 
+        private
         fun newDefaultPatternSet() =
             PatternSet().apply {
                 exclude("**/.gradle/**")
