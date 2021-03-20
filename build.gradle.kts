@@ -109,7 +109,7 @@ tasks.rat {
 }
 tasks.check { dependsOn(tasks.rat) }
 
-val isCI = System.getenv("CI") == "true"
+val isCI = providers.environmentVariable("CI").forUseAtConfigurationTime().orNull == "true"
 if (isCI) {
     tasks.test {
         maxParallelForks = 1
