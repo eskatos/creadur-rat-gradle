@@ -45,7 +45,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
                 id("org.nosphere.apache.rat")
             }
             repositories {
-                gradlePluginPortal()
+                mavenCentral()
             }
             tasks.rat {
                 verbose.set(true)
@@ -90,7 +90,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
                 id("org.nosphere.apache.rat")
             }
             repositories {
-                gradlePluginPortal()
+                mavenCentral()
             }
             tasks.rat {
                 verbose.set(true)
@@ -122,7 +122,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
                 id("org.nosphere.apache.rat")
             }
             repositories {
-                gradlePluginPortal()
+                mavenCentral()
             }
             tasks.rat {
                 verbose.set(true)
@@ -156,7 +156,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
                 id("org.nosphere.apache.rat")
             }
             repositories {
-                gradlePluginPortal()
+                mavenCentral()
             }
             tasks.rat {
                 verbose.set(true)
@@ -185,7 +185,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
                 id("org.nosphere.apache.rat")
             }
             repositories {
-                gradlePluginPortal()
+                mavenCentral()
             }
             tasks.rat {
                 verbose.set(true)
@@ -211,7 +211,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
                 id("org.nosphere.apache.rat")
             }
             repositories {
-                gradlePluginPortal()
+                mavenCentral()
             }
             tasks.rat {
                 verbose.set(true)
@@ -237,7 +237,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
                 id("org.nosphere.apache.rat")
             }
             repositories {
-                gradlePluginPortal()
+                mavenCentral()
             }
             tasks.rat {
                 excludes = [

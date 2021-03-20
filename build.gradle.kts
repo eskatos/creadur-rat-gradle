@@ -54,7 +54,7 @@ kotlinDslPluginOptions {
 }
 
 repositories {
-    gradlePluginPortal()
+    mavenCentral()
 }
 
 dependencies {

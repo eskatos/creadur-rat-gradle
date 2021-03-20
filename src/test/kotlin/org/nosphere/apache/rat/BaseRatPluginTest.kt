@@ -34,7 +34,7 @@ class BaseRatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix)
                 id("org.nosphere.apache.rat-base")
             }
             repositories {
-                gradlePluginPortal()
+                mavenCentral()
             }
             task("assertion") {
                 def hasRat = project.tasks.findByName('rat') != null
@@ -57,7 +57,7 @@ class BaseRatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix)
                 id("org.nosphere.apache.rat-base")
             }
             repositories {
-                gradlePluginPortal()
+                mavenCentral()
             }
             task someRat(type: org.nosphere.apache.rat.RatTask) {
                 verbose.set(true)
