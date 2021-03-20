@@ -94,7 +94,9 @@ sourceSets {
     }
 }
 honker.license = "Apache 2"
-tasks.honkerGenNotice { footer = "This product includes software developed at\nThe Apache Software Foundation (http://www.apache.org/).\n" }
+tasks.honkerGenNotice {
+    footer = "This product includes software developed at\nThe Apache Software Foundation (http://www.apache.org/).\n"
+}
 tasks.check { dependsOn(tasks.honkerCheck) }
 
 tasks.rat {
@@ -106,3 +108,10 @@ tasks.rat {
     )
 }
 tasks.check { dependsOn(tasks.rat) }
+
+val isCI = System.getenv("CI") == "true"
+if (isCI) {
+    tasks.test {
+        maxParallelForks = 1
+    }
+}
