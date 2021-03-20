@@ -235,7 +235,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
     private
     fun BuildResult.assertOutputContainsAuditFailureMessage(unApprovedLicenses: Int = 1) {
         assertThat(output, containsString("Apache Rat audit failure - $unApprovedLicenses unapproved license"))
-        assertThat(output, containsString(htmlReportFile.absolutePath))
+        assertThat(output, containsString(htmlReportFile.relativeTo(rootDir).path))
     }
 
     private
