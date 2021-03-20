@@ -107,7 +107,6 @@ tasks.rat {
         ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**", ".editorconfig" // IDEs
     )
 }
-tasks.check { dependsOn(tasks.rat) }
 
 val isCI = providers.environmentVariable("CI").forUseAtConfigurationTime().orNull == "true"
 if (isCI) {
