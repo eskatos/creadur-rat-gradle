@@ -98,7 +98,8 @@ abstract class AbstractPluginTest(
     private
     val extraArguments: Sequence<String>
         get() = sequence {
-            yield("-s")
+            yield("--stacktrace")
+            yield("--warning-mode=fail")
             if (testMatrix.configurationCache) {
                 yield("--configuration-cache")
             }

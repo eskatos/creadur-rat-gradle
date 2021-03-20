@@ -26,7 +26,6 @@ import org.gradle.testkit.runner.TaskOutcome.SUCCESS
 import org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
-import org.hamcrest.CoreMatchers.not
 import org.junit.Assert.assertThat
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -225,31 +224,6 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
         buildAndFail("check", "-s") {
             assertRatTask(FAILED)
             assertGeneratedAllReports()
-        }
-    }
-
-    @Test
-    fun `no deprecation warnings`() {
-        withBuildScript(
-            """
-            plugins {
-                id("base")
-                id("org.nosphere.apache.rat")
-            }
-            repositories {
-                mavenCentral()
-            }
-            tasks.rat {
-                excludes = [
-                    'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',
-                ]
-            }
-            """
-        )
-
-        build("rat", "--warning-mode=all") {
-            assertRatTask(SUCCESS)
-            assertThat(output, not(containsString("has been deprecated")))
         }
     }
 
