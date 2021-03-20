@@ -24,12 +24,10 @@ plugins {
     id("org.nosphere.apache.rat-base")
 }
 
-val ratTaskConfiguration: RatTask.() -> Unit = {
+val rat = tasks.register("rat", RatTask::class.java) {
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Runs Apache Rat audit tool"
 }
-
-val rat = tasks.register("rat", RatTask::class.java, ratTaskConfiguration)
 
 plugins.withType(LifecycleBasePlugin::class.java) {
     tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure {
