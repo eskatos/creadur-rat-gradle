@@ -1,6 +1,7 @@
 
 # Apache RAT (Release Audit Tool) Gradle Plugin
 
+[![CI](https://github.com/eskatos/creadur-rat-gradle/actions/workflows/gradle-build-pr.yml/badge.svg)](https://github.com/eskatos/creadur-rat-gradle/actions/workflows/gradle-build-pr.yml)
 [![Apache License 2](http://img.shields.io/badge/license-ASF2-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 This plugin allows to run the [Apache RAT](https://creadur.apache.org/rat/) release audit tool, focused on licenses.

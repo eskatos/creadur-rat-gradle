@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 name: CI
-on: [push, pull_request]
+on: [ push, pull_request ]
 jobs:
     gradle:
         strategy:
@@ -32,3 +32,14 @@ jobs:
                     CI: true
                 with:
                     arguments: build --continue --stacktrace --scan
+            -   uses: actions/github-script@v3
+                if: github.event_name == 'pull_request' && failure()
+                with:
+                    github-token: ${{secrets.GITHUB_TOKEN}}
+                    script: |
+                        github.issues.createComment({
+                          issue_number: context.issue.number,
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          body: '❌ ${{ github.workflow }} failed: ${{ steps.gradle.outputs.build-scan-url }}'
+                        })
