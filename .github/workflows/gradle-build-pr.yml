@@ -27,7 +27,7 @@ jobs:
             -   uses: actions/setup-java@v1
                 with:
                     java-version: 11
-            -   uses: eskatos/gradle-command-action@v1
+            -   uses: gradle/gradle-build-action@v2
                 env:
                     CI: true
                 with:
