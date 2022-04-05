@@ -26,7 +26,7 @@ plugins {
 }
 
 group = "org.nosphere.apache"
-version = "0.8.0-SNAPSHOT"
+version = "0.7.1"
 
 pluginBundle {
     website = "https://github.com/eskatos/creadur-rat-gradle"
@@ -50,6 +50,7 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(8))
     }
+    withSourcesJar()
 }
 
 repositories {
@@ -66,22 +67,6 @@ dependencies {
 tasks.validatePlugins {
     failOnWarning.set(true)
     enableStricterValidation.set(true)
-}
-
-val sourcesJar by tasks.registering(Jar::class) {
-    group = JavaBasePlugin.DOCUMENTATION_GROUP
-    description = "Assembles sources JAR"
-    archiveClassifier.set("sources")
-    from(sourceSets.main.map { it.allSource })
-    from(layout.buildDirectory.dir("generated-sources/kotlin-dsl-plugins/kotlin"))
-}
-
-publishing {
-    publications {
-        register<MavenPublication>("pluginMaven") {
-            artifact(sourcesJar.get())
-        }
-    }
 }
 
 sourceSets {
