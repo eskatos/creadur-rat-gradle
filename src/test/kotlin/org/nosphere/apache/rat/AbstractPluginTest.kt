@@ -41,8 +41,9 @@ abstract class AbstractPluginTest(
         @Parameterized.Parameters(name = "{0}")
         @JvmStatic
         fun testMatrix() = listOf(
-            TestMatrix(GradleVersion.version("7.0-milestone-3"), true),
-            TestMatrix(GradleVersion.version("6.8.3"), true),
+            TestMatrix(GradleVersion.version("7.4.2"), true),
+            TestMatrix(GradleVersion.version("7.0"), true),
+            TestMatrix(GradleVersion.version("6.9.2"), true),
             TestMatrix(GradleVersion.version("6.0"))
         )
     }
