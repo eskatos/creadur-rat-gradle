@@ -22,7 +22,7 @@ plugins {
     `maven-publish`
     id("com.gradle.plugin-publish") version "1.0.0-rc-1"
     id("org.nosphere.apache.rat") version "0.7.0"
-    id("org.nosphere.honker") version "0.3.0"
+    id("org.nosphere.honker") version "0.4.0"
 }
 
 group = "org.nosphere.apache"
@@ -52,11 +52,6 @@ java {
     }
 }
 
-kotlinDslPluginOptions {
-    experimentalWarning.set(false)
-    jvmTarget.set("1.8")
-}
-
 repositories {
     mavenCentral()
 }
@@ -68,9 +63,9 @@ dependencies {
     testImplementation(gradleTestKit())
 }
 
-tasks.validateTaskProperties {
-    failOnWarning = true
-    enableStricterValidation = true
+tasks.validatePlugins {
+    failOnWarning.set(true)
+    enableStricterValidation.set(true)
 }
 
 val sourcesJar by tasks.registering(Jar::class) {
