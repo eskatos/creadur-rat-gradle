@@ -20,7 +20,7 @@
 plugins {
     `kotlin-dsl`
     `maven-publish`
-    id("com.gradle.plugin-publish") version "0.12.0"
+    id("com.gradle.plugin-publish") version "1.0.0-rc-1"
     id("org.nosphere.apache.rat") version "0.7.0"
     id("org.nosphere.honker") version "0.3.0"
 }
@@ -33,6 +33,9 @@ pluginBundle {
     vcsUrl = "https://github.com/eskatos/creadur-rat-gradle"
     description = "Apache RAT (Release Audit Tool) Gradle Plugin"
     tags = listOf("apache", "release-audit", "license")
+}
+
+gradlePlugin {
     plugins {
         named("org.nosphere.apache.rat-base") {
             displayName = "Apache RAT Base Gradle Plugin"
