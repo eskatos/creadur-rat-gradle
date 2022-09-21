@@ -58,7 +58,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.apache.rat:apache-rat:0.13")
+    compileOnly("org.apache.rat:apache-rat:0.15")
 
     testImplementation("junit:junit:4.12")
     testImplementation(gradleTestKit())
