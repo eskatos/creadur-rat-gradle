@@ -91,7 +91,7 @@ tasks.rat {
     )
 }
 
-val isCI = providers.environmentVariable("CI").forUseAtConfigurationTime().orNull == "true"
+val isCI = providers.environmentVariable("CI").orNull == "true"
 if (isCI) {
     tasks.test {
         maxParallelForks = 1
