@@ -26,7 +26,7 @@ plugins {
 }
 
 group = "org.nosphere.apache"
-version = "0.7.2-SNAPSHOT"
+version = "0.8.0"
 
 pluginBundle {
     website = "https://github.com/eskatos/creadur-rat-gradle"
