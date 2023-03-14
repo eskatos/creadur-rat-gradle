@@ -16,6 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import org.nosphere.honker.gradle.HonkerCheckTask
+import org.nosphere.honker.gradle.HonkerGenDependenciesTask
+import org.nosphere.honker.gradle.HonkerGenLicenseTask
+import org.nosphere.honker.gradle.HonkerGenNoticeTask
 
 plugins {
     `kotlin-dsl`
@@ -66,6 +70,12 @@ dependencies {
 tasks.validatePlugins {
     failOnWarning.set(true)
     enableStricterValidation.set(true)
+}
+
+tasks.matching {
+    it is HonkerCheckTask || it is HonkerGenDependenciesTask || it is HonkerGenLicenseTask || it is HonkerGenNoticeTask
+}.configureEach {
+    notCompatibleWithConfigurationCache("https://github.com/eskatos/honker-gradle/issues/1")
 }
 
 sourceSets {
