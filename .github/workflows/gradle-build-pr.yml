@@ -33,7 +33,7 @@ jobs:
           CI: true
         with:
           arguments: build --continue --stacktrace --scan
-      - uses: actions/github-script@v3
+      - uses: actions/github-script@v6
         if: github.event_name == 'pull_request' && failure()
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
