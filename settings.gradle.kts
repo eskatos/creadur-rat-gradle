@@ -33,3 +33,5 @@ if (isCI) {
         }
     }
 }
+
+enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
