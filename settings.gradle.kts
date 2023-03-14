@@ -30,6 +30,7 @@ if (isCI) {
         buildScan {
             termsOfServiceUrl = "https://gradle.com/terms-of-service"
             termsOfServiceAgree = "yes"
+            publishAlways()
             tag("CI")
         }
     }

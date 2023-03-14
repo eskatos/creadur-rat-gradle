@@ -15,7 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 name: CI
-on: [ push, pull_request ]
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
 jobs:
   gradle:
     strategy:
@@ -26,13 +33,14 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
         with:
-          java-version: 11
+          java-version: 17
           distribution: 'zulu'
       - uses: gradle/gradle-build-action@v2
         env:
           CI: true
         with:
-          arguments: build --continue --stacktrace --scan
+          gradle-home-cache-cleanup: true
+          arguments: build --continue --stacktrace
       - uses: actions/github-script@v6
         if: github.event_name == 'pull_request' && failure()
         with:

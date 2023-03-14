@@ -15,7 +15,18 @@
 # specific language governing permissions and limitations
 # under the License.
 name: "Validate Gradle Wrapper"
-on: [ push ]
+
+on:
+  push:
+    paths:
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'gradle/wrapper/'
+  pull_request:
+    paths:
+      - 'gradlew'
+      - 'gradlew.bat'
+      - 'gradle/wrapper/'
 
 jobs:
   validation:
