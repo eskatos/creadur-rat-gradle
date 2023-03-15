@@ -72,10 +72,15 @@ tasks.validatePlugins {
     enableStricterValidation.set(true)
 }
 
-tasks.matching {
-    it is HonkerCheckTask || it is HonkerGenDependenciesTask || it is HonkerGenLicenseTask || it is HonkerGenNoticeTask
-}.configureEach {
-    notCompatibleWithConfigurationCache("https://github.com/eskatos/honker-gradle/issues/1")
+listOf(
+    HonkerCheckTask::class,
+    HonkerGenDependenciesTask::class,
+    HonkerGenLicenseTask::class,
+    HonkerGenNoticeTask::class
+).forEach { honkerTaskType ->
+    tasks.withType(honkerTaskType).configureEach {
+        notCompatibleWithConfigurationCache("https://github.com/eskatos/honker-gradle/issues/1")
+    }
 }
 
 sourceSets {
