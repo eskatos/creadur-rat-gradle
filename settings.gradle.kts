@@ -19,17 +19,21 @@
 
 plugins {
     `gradle-enterprise`
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.4.0"
 }
 
 rootProject.name = "creadur-rat-gradle"
 
-val isCI = providers.environmentVariable("CI").forUseAtConfigurationTime().orNull == "true"
+val isCI = providers.environmentVariable("CI").orNull == "true"
 if (isCI) {
     gradleEnterprise {
         buildScan {
             termsOfServiceUrl = "https://gradle.com/terms-of-service"
             termsOfServiceAgree = "yes"
+            publishAlways()
             tag("CI")
         }
     }
 }
+
+enableFeaturePreview("STABLE_CONFIGURATION_CACHE")

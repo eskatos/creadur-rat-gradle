@@ -16,27 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import org.nosphere.honker.gradle.HonkerCheckTask
+import org.nosphere.honker.gradle.HonkerGenDependenciesTask
+import org.nosphere.honker.gradle.HonkerGenLicenseTask
+import org.nosphere.honker.gradle.HonkerGenNoticeTask
 
 plugins {
     `kotlin-dsl`
     `maven-publish`
-    id("com.gradle.plugin-publish") version "1.0.0"
-    id("org.nosphere.apache.rat") version "0.7.0"
+    id("com.gradle.plugin-publish") version "1.1.0"
+    id("org.nosphere.apache.rat") version "0.8.0"
     id("org.nosphere.honker") version "0.4.0"
 }
 
 group = "org.nosphere.apache"
 version = "0.8.1-SNAPSHOT"
 
-pluginBundle {
-    website = "https://github.com/eskatos/creadur-rat-gradle"
-    vcsUrl = "https://github.com/eskatos/creadur-rat-gradle"
-    description = "Apache RAT (Release Audit Tool) Gradle Plugin"
-    tags = listOf("apache", "release-audit", "license")
-}
-
 gradlePlugin {
+    website.set("https://github.com/eskatos/creadur-rat-gradle")
+    vcsUrl.set("https://github.com/eskatos/creadur-rat-gradle")
     plugins {
+        all {
+            description = "Apache RAT (Release Audit Tool) Gradle Plugin"
+            tags.set(listOf("apache", "release-audit", "license"))
+        }
         named("org.nosphere.apache.rat-base") {
             displayName = "Apache RAT Base Gradle Plugin"
         }
@@ -67,6 +70,17 @@ dependencies {
 tasks.validatePlugins {
     failOnWarning.set(true)
     enableStricterValidation.set(true)
+}
+
+listOf(
+    HonkerCheckTask::class,
+    HonkerGenDependenciesTask::class,
+    HonkerGenLicenseTask::class,
+    HonkerGenNoticeTask::class
+).forEach { honkerTaskType ->
+    tasks.withType(honkerTaskType).configureEach {
+        notCompatibleWithConfigurationCache("https://github.com/eskatos/honker-gradle/issues/1")
+    }
 }
 
 sourceSets {
