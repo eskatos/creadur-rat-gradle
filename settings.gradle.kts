@@ -24,7 +24,7 @@ plugins {
 
 rootProject.name = "creadur-rat-gradle"
 
-val isCI = providers.environmentVariable("CI").orNull == "true"
+val isCI = providers.environmentVariable("CI").isPresent
 if (isCI) {
     gradleEnterprise {
         buildScan {

@@ -36,13 +36,11 @@ jobs:
           java-version: 17
           distribution: 'zulu'
       - uses: gradle/gradle-build-action@v2
-        env:
-          CI: true
         with:
           gradle-home-cache-cleanup: true
           arguments: build --continue --stacktrace
       - uses: actions/github-script@v6
-        if: github.event_name == 'pull_request' && failure()
+        if: github.event_name == 'pull_request' && failure() && github.repository == 'eskatos/creadur-rat-gradle'
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |

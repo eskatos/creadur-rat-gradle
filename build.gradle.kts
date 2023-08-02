@@ -105,10 +105,3 @@ tasks.rat {
     )
     notCompatibleWithConfigurationCache("https://github.com/eskatos/creadur-rat-gradle/issues/23")
 }
-
-val isCI = providers.environmentVariable("CI").orNull == "true"
-if (isCI) {
-    tasks.test {
-        maxParallelForks = 1
-    }
-}
