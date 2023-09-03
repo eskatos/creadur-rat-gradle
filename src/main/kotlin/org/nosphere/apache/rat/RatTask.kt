@@ -134,9 +134,9 @@ open class RatTask private constructor(
 
     @get:OutputDirectory
     val reportDir = objects.directoryProperty().apply {
-        set(layout.projectDirectory.dir(providers.provider {
+        set(layout.projectDirectory.dir(
             project.extensions.getByType<ReportingExtension>().file(name).canonicalPath
-        }))
+        ))
     }
 
     @get:InputFiles
