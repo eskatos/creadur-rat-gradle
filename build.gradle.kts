@@ -24,7 +24,7 @@ import org.nosphere.honker.gradle.HonkerGenNoticeTask
 plugins {
     `kotlin-dsl`
     `maven-publish`
-    id("com.gradle.plugin-publish") version "1.1.0"
+    id("com.gradle.plugin-publish") version "1.2.1"
     id("org.nosphere.apache.rat") version "0.8.0"
     id("org.nosphere.honker") version "0.4.0"
 }
@@ -33,12 +33,12 @@ group = "org.nosphere.apache"
 version = "0.8.1-SNAPSHOT"
 
 gradlePlugin {
-    website.set("https://github.com/eskatos/creadur-rat-gradle")
-    vcsUrl.set("https://github.com/eskatos/creadur-rat-gradle")
+    website = "https://github.com/eskatos/creadur-rat-gradle"
+    vcsUrl = "https://github.com/eskatos/creadur-rat-gradle"
     plugins {
         all {
             description = "Apache RAT (Release Audit Tool) Gradle Plugin"
-            tags.set(listOf("apache", "release-audit", "license"))
+            tags = listOf("apache", "release-audit", "license")
         }
         named("org.nosphere.apache.rat-base") {
             displayName = "Apache RAT Base Gradle Plugin"
@@ -51,7 +51,7 @@ gradlePlugin {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(8))
+        languageVersion = JavaLanguageVersion.of(8)
     }
     withSourcesJar()
 }
@@ -68,8 +68,8 @@ dependencies {
 }
 
 tasks.validatePlugins {
-    failOnWarning.set(true)
-    enableStricterValidation.set(true)
+    failOnWarning = true
+    enableStricterValidation = true
 }
 
 listOf(
@@ -97,17 +97,11 @@ tasks.honkerGenNotice {
 tasks.check { dependsOn(tasks.honkerCheck) }
 
 tasks.rat {
-    verbose.set(true)
+    verbose = true
     exclude(
         "README.md", "CODE_OF_CONDUCT.md",
         ".gradletasknamecache", "gradle/wrapper/**", "gradlew*", "build/**", // Gradle
         ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**", ".editorconfig" // IDEs
     )
-}
-
-val isCI = providers.environmentVariable("CI").orNull == "true"
-if (isCI) {
-    tasks.test {
-        maxParallelForks = 1
-    }
+    notCompatibleWithConfigurationCache("https://github.com/eskatos/creadur-rat-gradle/issues/23")
 }
