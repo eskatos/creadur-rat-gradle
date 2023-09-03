@@ -227,6 +227,56 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
         }
     }
 
+    /**
+     * Regression test for https://github.com/eskatos/creadur-rat-gradle/issues/23
+     */
+    @Test
+    fun `run with the task that marked notCompatibleWithConfigurationCache`() {
+        val someTask = if (testMatrix.gradleVersion.isGreaterOrEqualThan("7.4")) {
+            """
+            tasks.register("someTask") {
+                doFirst {
+                    logger.log(LogLevel.WARN, "This task is not compatible with configuration cache.")
+                }
+                notCompatibleWithConfigurationCache("")
+            }
+            tasks.check {
+                dependsOn("someTask")
+            }
+            """.trimIndent()
+        } else {
+            ""
+        }
+
+        withBuildScript(
+            """
+            plugins {
+                id("base")
+                id("org.nosphere.apache.rat")
+            }
+            repositories {
+                mavenCentral()
+            }
+            $someTask
+            tasks.rat {
+                verbose.set(true)
+                excludes = [
+                    'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',
+                ]
+                exclude(
+                    'guh/**',
+                    'no-license-file.txt'
+                )
+            }
+            """
+        )
+        withFile("no-license-file.txt", "Nothing here.")
+
+        build("check") {
+            assertRatTask(SUCCESS)
+        }
+    }
+
     private
     fun BuildResult.assertRatTask(outcome: TaskOutcome) {
         assertThat(outcomeOf(":rat"), equalTo(outcome))
