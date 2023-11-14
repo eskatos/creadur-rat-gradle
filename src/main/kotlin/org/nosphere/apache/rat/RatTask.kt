@@ -143,7 +143,7 @@ open class RatTask private constructor(
     @get:Classpath
     internal
     val ratClasspath: FileCollection = objects.fileCollection().apply {
-        from(project.run {
+        from(project.buildscript.run {
             configurations.detachedConfiguration(
                 dependencies.create("org.apache.rat:apache-rat:$ratVersion")
             )
