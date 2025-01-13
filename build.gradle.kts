@@ -24,8 +24,8 @@ import org.nosphere.honker.gradle.HonkerGenNoticeTask
 plugins {
     `kotlin-dsl`
     `maven-publish`
-    id("com.gradle.plugin-publish") version "1.2.1"
-    id("org.nosphere.apache.rat") version "0.8.0"
+    id("com.gradle.plugin-publish") version "1.3.0"
+    id("org.nosphere.apache.rat") version "0.8.1"
     id("org.nosphere.honker") version "0.4.0"
 }
 
