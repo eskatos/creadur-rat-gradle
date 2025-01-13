@@ -18,37 +18,23 @@
  */
 package org.nosphere.apache.rat
 
+import org.gradle.api.JavaVersion
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.util.GradleVersion
 import org.junit.Before
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
-import org.junit.runners.Parameterized
 import java.io.File
 
-abstract class AbstractPluginTest(
-    protected val testMatrix: TestMatrix
-) {
+abstract class AbstractPluginTest {
 
-    data class TestMatrix(
-        val gradleVersion: GradleVersion,
-        val configurationCache: Boolean = true,
-    )
+    protected val gradleVersion: GradleVersion =
+        GradleVersion.version(requireNotNull(System.getProperty("testedGradleVersion")) {
+            "System Property `testedGradleVersion` is not set!"
+        })
 
-    companion object {
-
-        @Parameterized.Parameters(name = "{0}")
-        @JvmStatic
-        fun testMatrix() = listOf(
-            TestMatrix(GradleVersion.version("8.9")),
-            TestMatrix(GradleVersion.version("8.0")),
-            TestMatrix(GradleVersion.version("7.6.1")),
-            TestMatrix(GradleVersion.version("7.0")),
-            TestMatrix(GradleVersion.version("6.9.2")),
-            TestMatrix(GradleVersion.version("6.0"), configurationCache = false)
-        )
-    }
+    private val configurationCache: Boolean = gradleVersion.isGreaterOrEqualThan("6.3")
 
     @Rule
     @JvmField
@@ -61,6 +47,8 @@ abstract class AbstractPluginTest(
 
     @Before
     fun setup() {
+        println("Gradle $gradleVersion on Java ${JavaVersion.current()} with Configuration Cache = $configurationCache")
+        println()
         rootDir.resolve("settings.gradle").writeText("")
     }
 
@@ -87,7 +75,7 @@ abstract class AbstractPluginTest(
     private
     fun gradleRunnerFor(vararg arguments: String) =
         GradleRunner.create()
-            .withGradleVersion(testMatrix.gradleVersion.version)
+            .withGradleVersion(gradleVersion.version)
             .withPluginClasspath()
             .forwardOutput()
             .withProjectDir(rootDir)
@@ -98,7 +86,7 @@ abstract class AbstractPluginTest(
         get() = sequence {
             yield("--stacktrace")
             yield("--warning-mode=fail")
-            if (testMatrix.configurationCache) {
+            if (configurationCache) {
                 yield("--configuration-cache")
             }
         }
@@ -108,7 +96,7 @@ abstract class AbstractPluginTest(
         task(path)?.outcome
 
     protected
-    val TestMatrix.isGradleMin63
+    val isGradleMin63
         get() = gradleVersion.isGreaterOrEqualThan("6.3")
 
     protected

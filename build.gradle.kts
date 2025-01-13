@@ -72,6 +72,40 @@ tasks.validatePlugins {
     enableStricterValidation = true
 }
 
+val wrapperGradleVersion = GradleVersion.current().version
+val testedGradleVersions = listOf(
+    "6.0", "6.9.2",
+    "7.0", "7.6.1",
+    "8.0", "8.12",
+)
+
+fun javaLanguageVersionFor(gradleVersion: String): Int =
+    if (GradleVersion.version(gradleVersion) >= GradleVersion.version("8.10")) 17
+    else 8
+
+tasks.test {
+    description = "Runs the test suite with Gradle $wrapperGradleVersion."
+    systemProperty("testedGradleVersion", wrapperGradleVersion)
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(javaLanguageVersionFor(wrapperGradleVersion))
+    }
+}
+testedGradleVersions.minus(wrapperGradleVersion).forEach { testedGradleVersion ->
+    val task = tasks.register<Test>("test_${testedGradleVersion.replace(".", "_")}") {
+        group = "verification"
+        description = "Runs the test suite with Gradle $testedGradleVersion."
+        classpath = tasks.test.map { it.classpath }.get()
+        testClassesDirs = tasks.test.map { it.testClassesDirs }.get()
+        systemProperty("testedGradleVersion", testedGradleVersion)
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(javaLanguageVersionFor(testedGradleVersion))
+        }
+    }
+    tasks.check {
+        dependsOn(task)
+    }
+}
+
 listOf(
     HonkerCheckTask::class,
     HonkerGenDependenciesTask::class,

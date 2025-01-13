@@ -20,20 +20,14 @@ package org.nosphere.apache.rat
 
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
-import org.gradle.testkit.runner.TaskOutcome.FAILED
-import org.gradle.testkit.runner.TaskOutcome.FROM_CACHE
-import org.gradle.testkit.runner.TaskOutcome.SUCCESS
-import org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE
+import org.gradle.testkit.runner.TaskOutcome.*
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
-@RunWith(Parameterized::class)
-class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
+class RatPluginTest : AbstractPluginTest() {
 
     @Test
     fun `success, up-to-date and from-cache`() {
@@ -63,7 +57,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
         }
 
         build("check") {
-            if (testMatrix.isGradleMin63) assertRatTask(UP_TO_DATE)
+            if (isGradleMin63) assertRatTask(UP_TO_DATE)
             else assertRatTask(SUCCESS)
         }
 
@@ -132,7 +126,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
         }
 
         build("check") {
-            if (testMatrix.isGradleMin63) assertRatTask(UP_TO_DATE)
+            if (isGradleMin63) assertRatTask(UP_TO_DATE)
             else assertRatTask(SUCCESS)
         }
     }
@@ -214,7 +208,7 @@ class RatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
      */
     @Test
     fun `run with the task that marked notCompatibleWithConfigurationCache`() {
-        val someTask = if (testMatrix.gradleVersion.isGreaterOrEqualThan("7.4")) {
+        val someTask = if (gradleVersion.isGreaterOrEqualThan("7.4")) {
             """
             tasks.register("someTask") {
                 doFirst {
