@@ -19,11 +19,8 @@
 package org.nosphere.apache.rat
 
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 
-@RunWith(Parameterized::class)
-class BaseRatPluginTest(testMatrix: TestMatrix) : AbstractPluginTest(testMatrix) {
+class BaseRatPluginTest : AbstractPluginTest() {
 
     @Test
     fun `do not create rat task `() {

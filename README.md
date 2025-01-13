@@ -1,4 +1,3 @@
-
 # Apache RAT (Release Audit Tool) Gradle Plugin
 
 [![CI](https://github.com/eskatos/creadur-rat-gradle/actions/workflows/gradle-build-pr.yml/badge.svg)](https://github.com/eskatos/creadur-rat-gradle/actions/workflows/gradle-build-pr.yml)
@@ -112,23 +111,24 @@ Execution failed for task ':rat'.
 
 ![Apache Rat HTML Report](src/docs/resources/html_report_header.png "Apache Rat HTML Report")
 
-
 ## Compatibility matrix
 
-| Plugin  | Min Java | Min Gradle | Max Gradle | [Configuration Cache](https://docs.gradle.org/current/userguide/configuration_cache.html) | [Build Cache](https://docs.gradle.org/current/userguide/build_cache.html)
-|---------| -------- | ---------- | ---------- | --- | ---
-| `0.8.1` | `1.8`    | `6.0`      | `8.x`      | 🟢  | 🟢
-| `0.8.0` | `1.8`    | `6.0`      | `8.x`      | 🟡  | 🟢
-| `0.7.1` | `1.8`    | `6.0`      | `7.x`      | 🟡  | 🟢
-| `0.7.0` | `1.8`    | `6.0`      | `7.x`      | 🟡  | 🟢
-| `0.6.0` | `1.6`    | `4.7`      | `6.x`      | 🟡  | 🟢
-| `0.5.3` | `1.6`    | `4.7`      | `6.x`      | 🔴  | 🟢
-| `0.5.2` | `1.6`    | `4.7`      | `6.x`      | 🔴  | 🟢
-| `0.5.1` | `1.6`    | `4.7`      | `5.x`      | 🔴  | 🟢
-| `0.5.0` | `1.6`    | `4.7`      | `5.x`      | 🔴  | 🟢
-| `0.4.0` | `1.6`    | `4.7`      | `5.x`      | 🔴  | 🟢
-| `0.3.1` | `1.6`    | `2.14`     | `4.x`      | 🔴  | 🟢
-| `0.3.0` | `1.6`    | `2.14`     | `4.x`      | 🔴  | 🟢
-| `0.2.0` | `1.6`    | `2.14`     | `4.x`      | 🔴  | 🟢
-| `0.1.0` | `1.6`    | `2.14`     | `4.x`      | 🔴  | 🟢
+| Plugin  | Min Java | Min Gradle | Max Gradle | Configuration Cache | Build Cache |
+|---------|----------|------------|------------|---------------------|-------------|
+| `0.8.1` | `1.8`    | `6.0`      | `8.x`      | 🟢                  | 🟢          |
+| `0.8.0` | `1.8`    | `6.0`      | `8.x`      | 🟡                  | 🟢          |
+| `0.7.1` | `1.8`    | `6.0`      | `7.x`      | 🟡                  | 🟢          |
+| `0.7.0` | `1.8`    | `6.0`      | `7.x`      | 🟡                  | 🟢          |
+| `0.6.0` | `1.6`    | `4.7`      | `6.x`      | 🟡                  | 🟢          |
+| `0.5.3` | `1.6`    | `4.7`      | `6.x`      | 🔴                  | 🟢          |
+| `0.5.2` | `1.6`    | `4.7`      | `6.x`      | 🔴                  | 🟢          |
+| `0.5.1` | `1.6`    | `4.7`      | `5.x`      | 🔴                  | 🟢          |
+| `0.5.0` | `1.6`    | `4.7`      | `5.x`      | 🔴                  | 🟢          |
+| `0.4.0` | `1.6`    | `4.7`      | `5.x`      | 🔴                  | 🟢          |
+| `0.3.1` | `1.6`    | `2.14`     | `4.x`      | 🔴                  | 🟢          |
+| `0.3.0` | `1.6`    | `2.14`     | `4.x`      | 🔴                  | 🟢          |
+| `0.2.0` | `1.6`    | `2.14`     | `4.x`      | 🔴                  | 🟢          |
+| `0.1.0` | `1.6`    | `2.14`     | `4.x`      | 🔴                  | 🟢          |
 
+* (1) [Configuration Cache](https://docs.gradle.org/current/userguide/configuration_cache.html)
+* (2) [Build Cache](https://docs.gradle.org/current/userguide/build_cache.html)
