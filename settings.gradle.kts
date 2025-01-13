@@ -18,22 +18,21 @@
  */
 
 plugins {
-    `gradle-enterprise`
+    id("com.gradle.develocity") version "3.19"
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
 }
 
 rootProject.name = "creadur-rat-gradle"
 
 val isCI = providers.environmentVariable("CI").isPresent
-if (isCI) {
-    gradleEnterprise {
-        buildScan {
-            termsOfServiceUrl = "https://gradle.com/terms-of-service"
-            termsOfServiceAgree = "yes"
-            publishAlways()
+develocity {
+    buildScan {
+        if (isCI) {
+            termsOfUseUrl = "https://gradle.com/terms-of-service"
+            termsOfUseAgree = "yes"
             tag("CI")
+        } else {
+            publishing.onlyIf { false }
         }
     }
 }
-
-enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
