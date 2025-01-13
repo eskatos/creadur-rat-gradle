@@ -135,7 +135,8 @@ tasks.rat {
     exclude(
         "README.md", "CODE_OF_CONDUCT.md",
         ".gradletasknamecache", "gradle/wrapper/**", "gradlew*", "build/**", // Gradle
-        ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**", ".editorconfig" // IDEs
+        ".kotlin/**", // Kotlin
+        ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**", ".editorconfig", // IDEs
     )
     notCompatibleWithConfigurationCache("https://github.com/eskatos/creadur-rat-gradle/issues/23")
 }
