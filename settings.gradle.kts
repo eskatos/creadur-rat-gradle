@@ -17,6 +17,15 @@
  * under the License.
  */
 
+pluginManagement {
+    plugins {
+        // Kotlin 2.1 does not support target Kotlin 1.4
+        kotlin("jvm") version "2.0.21"
+        // Can't replace the version with an import as the build script fails to compile then
+        id("org.gradle.kotlin.kotlin-dsl") version org.gradle.kotlin.dsl.support.expectedKotlinDslPluginsVersion
+    }
+}
+
 plugins {
     id("com.gradle.develocity") version "3.19"
     id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"

@@ -16,17 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.nosphere.honker.gradle.HonkerCheckTask
 import org.nosphere.honker.gradle.HonkerGenDependenciesTask
 import org.nosphere.honker.gradle.HonkerGenLicenseTask
 import org.nosphere.honker.gradle.HonkerGenNoticeTask
 
 plugins {
-    `kotlin-dsl`
     `maven-publish`
     id("com.gradle.plugin-publish") version "1.3.0"
     id("org.nosphere.apache.rat") version "0.8.1"
     id("org.nosphere.honker") version "0.4.0"
+    kotlin("jvm")
+    id("org.gradle.kotlin.kotlin-dsl")
 }
 
 group = "org.nosphere.apache"
@@ -51,7 +54,7 @@ gradlePlugin {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
+        languageVersion = JavaLanguageVersion.of(21)
     }
     withSourcesJar()
 }
@@ -65,6 +68,26 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation(gradleTestKit())
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release = 8
+}
+
+// See https://docs.gradle.org/current/userguide/compatibility.html
+// Kotlin 1.5 would require Gradle 7.2
+// Kotlin 1.7 would require Gradle 7.6
+// Target Kotlin 1.4, so the plugin can be used with Gradle 6.8+
+kotlin {
+    coreLibrariesVersion = "1.4.31"
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_1_8
+        freeCompilerArgs.add("-Xjdk-release=8")
+        @Suppress("DEPRECATION")
+        apiVersion = KotlinVersion.KOTLIN_1_4
+        @Suppress("DEPRECATION")
+        languageVersion = KotlinVersion.KOTLIN_1_4
+    }
 }
 
 tasks.validatePlugins {
