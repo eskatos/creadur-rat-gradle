@@ -38,7 +38,7 @@ import org.gradle.kotlin.dsl.*
 import javax.inject.Inject
 
 private
-const val ratVersion = "0.15"
+const val ratVersion = "0.17"
 
 @CacheableTask
 open class RatTask private constructor(
