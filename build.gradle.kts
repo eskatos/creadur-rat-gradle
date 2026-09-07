@@ -76,7 +76,8 @@ val wrapperGradleVersion = GradleVersion.current().version
 val testedGradleVersions = listOf(
     "6.0", "6.9.2",
     "7.0", "7.6.1",
-    "8.0", "8.12",
+    "8.0", "8.14.5",
+    "9.0.0", "9.7.1",
 )
 
 fun javaLanguageVersionFor(gradleVersion: String): Int =
