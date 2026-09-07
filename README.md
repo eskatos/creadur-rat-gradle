@@ -11,7 +11,7 @@ In your `build.gradle(.kts)` file:
 
 ```kotlin
 plugins {
-    id("org.nosphere.apache.rat") version "0.8.1"
+    id("org.nosphere.apache.rat") version "0.8.2"
 }
 ```
 
