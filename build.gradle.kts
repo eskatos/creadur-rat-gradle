@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+import org.gradle.plugin.compatibility.compatibility
 import org.nosphere.honker.gradle.HonkerCheckTask
 import org.nosphere.honker.gradle.HonkerGenDependenciesTask
 import org.nosphere.honker.gradle.HonkerGenLicenseTask
@@ -24,13 +25,13 @@ import org.nosphere.honker.gradle.HonkerGenNoticeTask
 plugins {
     `kotlin-dsl`
     `maven-publish`
-    id("com.gradle.plugin-publish") version "1.3.0"
+    id("com.gradle.plugin-publish") version "2.1.1"
     id("org.nosphere.apache.rat") version "0.8.1"
     id("org.nosphere.honker") version "0.4.0"
 }
 
 group = "org.nosphere.apache"
-version = "0.8.2-SNAPSHOT"
+version = "0.8.2"
 
 gradlePlugin {
     website = "https://github.com/eskatos/creadur-rat-gradle"
@@ -39,6 +40,11 @@ gradlePlugin {
         all {
             description = "Apache RAT (Release Audit Tool) Gradle Plugin"
             tags = listOf("apache", "release-audit", "license")
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
         }
         named("org.nosphere.apache.rat-base") {
             displayName = "Apache RAT Base Gradle Plugin"
@@ -76,7 +82,8 @@ val wrapperGradleVersion = GradleVersion.current().version
 val testedGradleVersions = listOf(
     "6.0", "6.9.2",
     "7.0", "7.6.1",
-    "8.0", "8.12",
+    "8.0", "8.14.5",
+    "9.0.0", "9.7.1",
 )
 
 fun javaLanguageVersionFor(gradleVersion: String): Int =
