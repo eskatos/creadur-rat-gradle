@@ -23,15 +23,20 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 import org.gradle.api.JavaVersion;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.gradle.util.GradleVersion;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.io.TempDir;
 
 public abstract class AbstractPluginTest {
@@ -40,7 +45,7 @@ public abstract class AbstractPluginTest {
 
     private final boolean configurationCache = isGreaterOrEqualThan(gradleVersion, "6.3");
 
-    @TempDir
+    @TempDir(cleanup = CleanupMode.NEVER)
     File tmpDir;
 
     @BeforeEach
@@ -49,6 +54,11 @@ public abstract class AbstractPluginTest {
                 + " with Configuration Cache = " + configurationCache);
         System.out.println();
         withFile("settings.gradle", "");
+    }
+
+    @AfterEach
+    public void deleteRootDir() {
+        deleteRecursivelyIgnoringFailures(tmpDir.toPath());
     }
 
     protected File getRootDir() {
@@ -106,6 +116,13 @@ public abstract class AbstractPluginTest {
             arguments.add("--configuration-cache");
         }
         return arguments;
+    }
+
+    private static void deleteRecursivelyIgnoringFailures(Path path) {
+        try (Stream<Path> paths = Files.walk(path)) {
+            paths.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
+        } catch (IOException ignored) {
+        }
     }
 
     private static String testedGradleVersion() {
