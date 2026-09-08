@@ -24,7 +24,6 @@ import org.nosphere.honker.gradle.HonkerGenNoticeTask
 
 plugins {
     `java-gradle-plugin`
-    `embedded-kotlin`
     `maven-publish`
     id("com.gradle.plugin-publish") version "2.1.1"
     id("org.nosphere.apache.rat") version "0.8.2"
@@ -32,7 +31,7 @@ plugins {
 }
 
 group = "org.nosphere.apache"
-version = "0.8.2"
+version = "0.8.3-SNAPSHOT"
 
 gradlePlugin {
     website = "https://github.com/eskatos/creadur-rat-gradle"
@@ -74,8 +73,11 @@ repositories {
 dependencies {
     compileOnly("org.apache.rat:apache-rat:0.15")
 
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(platform("org.junit:junit-bom:5.14.4"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(gradleTestKit())
+
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.validatePlugins {
@@ -94,6 +96,10 @@ val testedGradleVersions = listOf(
 fun javaLanguageVersionFor(gradleVersion: String): Int =
     if (GradleVersion.version(gradleVersion) >= GradleVersion.version("8.10")) 17
     else 8
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
 
 tasks.test {
     description = "Runs the test suite with Gradle $wrapperGradleVersion."
@@ -147,7 +153,6 @@ tasks.rat {
     exclude(
         "README.md", "CODE_OF_CONDUCT.md",
         ".gradletasknamecache", "gradle/wrapper/**", "gradlew*", "build/**", // Gradle
-        ".kotlin/**", // Kotlin
         ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**", ".editorconfig", // IDEs
     )
     notCompatibleWithConfigurationCache("https://github.com/eskatos/creadur-rat-gradle/issues/23")
