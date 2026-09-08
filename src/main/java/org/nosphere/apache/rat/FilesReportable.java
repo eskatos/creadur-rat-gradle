@@ -18,14 +18,6 @@
  */
 package org.nosphere.apache.rat;
 
-import org.apache.rat.Report;
-import org.apache.rat.api.RatException;
-import org.apache.rat.document.impl.FileDocument;
-import org.apache.rat.report.IReportable;
-import org.apache.rat.report.RatReport;
-
-import org.gradle.api.GradleException;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -36,6 +28,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.rat.Report;
+import org.apache.rat.api.RatException;
+import org.apache.rat.document.impl.FileDocument;
+import org.apache.rat.report.IReportable;
+import org.apache.rat.report.RatReport;
+import org.gradle.api.GradleException;
 
 class FilesReportable implements IReportable {
 

@@ -18,13 +18,6 @@
  */
 package org.nosphere.apache.rat;
 
-import org.gradle.testkit.runner.BuildResult;
-import org.gradle.testkit.runner.TaskOutcome;
-import org.junit.jupiter.api.Test;
-
-import java.io.File;
-import java.io.IOException;
-
 import static org.gradle.testkit.runner.TaskOutcome.FAILED;
 import static org.gradle.testkit.runner.TaskOutcome.FROM_CACHE;
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS;
@@ -32,26 +25,32 @@ import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
+import java.io.IOException;
+import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.TaskOutcome;
+import org.junit.jupiter.api.Test;
+
 public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void successUpToDateAndFromCache() throws IOException {
-        withBuildScript(String.join("\n",
-            "plugins {",
-            "    id(\"base\")",
-            "    id(\"org.nosphere.apache.rat\")",
-            "}",
-            "tasks.rat {",
-            "    verbose.set(true)",
-            "    excludes = [",
-            "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',",
-            "    ]",
-            "    exclude(",
-            "        'guh/**',",
-            "        'no-license-file.txt'",
-            "    )",
-            "}"
-        ));
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    verbose.set(true)",
+                "    excludes = [",
+                "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',",
+                "    ]",
+                "    exclude(",
+                "        'guh/**',",
+                "        'no-license-file.txt'",
+                "    )",
+                "}"));
         withFile("no-license-file.txt", "Nothing here.");
 
         assertRatTask(build("check"), SUCCESS);
@@ -69,18 +68,18 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void failTheBuildWhenFindingAFileWithUnapprovedOrUnknownLicense() {
-        withBuildScript(String.join("\n",
-            "plugins {",
-            "    id(\"base\")",
-            "    id(\"org.nosphere.apache.rat\")",
-            "}",
-            "tasks.rat {",
-            "    verbose.set(true)",
-            "    excludes = [",
-            "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'",
-            "    ]",
-            "}"
-        ));
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    verbose.set(true)",
+                "    excludes = [",
+                "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'",
+                "    ]",
+                "}"));
         withFile("no-license-file.txt", "Nothing here.");
 
         BuildResult result = buildAndFail("check");
@@ -93,19 +92,19 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void doNotFailButReportErrorsWhenFailOnErrorIsFalse() {
-        withBuildScript(String.join("\n",
-            "plugins {",
-            "    id(\"base\")",
-            "    id(\"org.nosphere.apache.rat\")",
-            "}",
-            "tasks.rat {",
-            "    verbose.set(true)",
-            "    failOnError.set(false)",
-            "    excludes = [",
-            "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'",
-            "    ]",
-            "}"
-        ));
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    verbose.set(true)",
+                "    failOnError.set(false)",
+                "    excludes = [",
+                "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'",
+                "    ]",
+                "}"));
         withFile("no-license-file.txt", "Nothing here.");
 
         BuildResult result = build("check");
@@ -118,22 +117,20 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void canDeclareCustomLicenseMatchers() {
-        withBuildScript(String.join("\n",
-            "plugins {",
-            "    id(\"base\")",
-            "    id(\"org.nosphere.apache.rat\")",
-            "}",
-            "tasks.rat {",
-            "    verbose.set(true)",
-            "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
-            "    substringMatcher(\"MIT\", \"The MIT License\","
-                + " \"Permission is hereby granted, free of charge, to any person obtaining a copy\")",
-            "}"
-        ));
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    verbose.set(true)",
+                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
+                "    substringMatcher(\"MIT\", \"The MIT License\","
+                        + " \"Permission is hereby granted, free of charge, to any person obtaining a copy\")",
+                "}"));
         withFile(
-            "substring-mit.txt",
-            "// Permission is hereby granted, free of charge, to any person obtaining a copy"
-        );
+                "substring-mit.txt", "// Permission is hereby granted, free of charge, to any person obtaining a copy");
 
         assertRatTask(build("check", "-s"), SUCCESS);
         assertGeneratedAllReports();
@@ -141,17 +138,17 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void canDisableDefaultLicenseMatchers() {
-        withBuildScript(String.join("\n",
-            "plugins {",
-            "    id(\"base\")",
-            "    id(\"org.nosphere.apache.rat\")",
-            "}",
-            "tasks.rat {",
-            "    verbose.set(true)",
-            "    addDefaultMatchers.set(false)",
-            "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
-            "}"
-        ));
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    verbose.set(true)",
+                "    addDefaultMatchers.set(false)",
+                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
+                "}"));
         withFile("default-licensed.sh", commentedApacheLicenseHeader());
 
         assertRatTask(buildAndFail("check", "-s"), FAILED);
@@ -160,17 +157,17 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void canDeclareWhatLicenseFamiliesAreApproved() {
-        withBuildScript(String.join("\n",
-            "plugins {",
-            "    id(\"base\")",
-            "    id(\"org.nosphere.apache.rat\")",
-            "}",
-            "tasks.rat {",
-            "    verbose.set(true)",
-            "    approvedLicenses.add(\"MIT\")",
-            "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
-            "}"
-        ));
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    verbose.set(true)",
+                "    approvedLicenses.add(\"MIT\")",
+                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
+                "}"));
         withFile("default-licensed.sh", commentedApacheLicenseHeader());
 
         assertRatTask(buildAndFail("check", "-s"), FAILED);
@@ -183,35 +180,36 @@ public class RatPluginTest extends AbstractPluginTest {
     @Test
     public void runWithTheTaskThatMarkedNotCompatibleWithConfigurationCache() {
         String someTask = isGreaterOrEqualThan(gradleVersion, "7.4")
-            ? String.join("\n",
-                "tasks.register(\"someTask\") {",
-                "    doFirst {",
-                "        logger.log(LogLevel.WARN, \"This task is not compatible with configuration cache.\")",
-                "    }",
-                "    notCompatibleWithConfigurationCache(\"\")",
-                "}",
-                "tasks.check {",
-                "    dependsOn(\"someTask\")",
-                "}")
-            : "";
+                ? String.join(
+                        "\n",
+                        "tasks.register(\"someTask\") {",
+                        "    doFirst {",
+                        "        logger.log(LogLevel.WARN, \"This task is not compatible with configuration cache.\")",
+                        "    }",
+                        "    notCompatibleWithConfigurationCache(\"\")",
+                        "}",
+                        "tasks.check {",
+                        "    dependsOn(\"someTask\")",
+                        "}")
+                : "";
 
-        withBuildScript(String.join("\n",
-            "plugins {",
-            "    id(\"base\")",
-            "    id(\"org.nosphere.apache.rat\")",
-            "}",
-            someTask,
-            "tasks.rat {",
-            "    verbose.set(true)",
-            "    excludes = [",
-            "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',",
-            "    ]",
-            "    exclude(",
-            "        'guh/**',",
-            "        'no-license-file.txt'",
-            "    )",
-            "}"
-        ));
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                someTask,
+                "tasks.rat {",
+                "    verbose.set(true)",
+                "    excludes = [",
+                "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',",
+                "    ]",
+                "    exclude(",
+                "        'guh/**',",
+                "        'no-license-file.txt'",
+                "    )",
+                "}"));
         withFile("no-license-file.txt", "Nothing here.");
 
         assertRatTask(build("check"), SUCCESS);

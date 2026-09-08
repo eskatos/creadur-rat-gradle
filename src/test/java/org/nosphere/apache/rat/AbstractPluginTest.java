@@ -18,14 +18,6 @@
  */
 package org.nosphere.apache.rat;
 
-import org.gradle.api.JavaVersion;
-import org.gradle.testkit.runner.BuildResult;
-import org.gradle.testkit.runner.GradleRunner;
-import org.gradle.testkit.runner.TaskOutcome;
-import org.gradle.util.GradleVersion;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.io.TempDir;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -34,6 +26,13 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.gradle.api.JavaVersion;
+import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.GradleRunner;
+import org.gradle.testkit.runner.TaskOutcome;
+import org.gradle.util.GradleVersion;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.io.TempDir;
 
 public abstract class AbstractPluginTest {
 
@@ -46,10 +45,8 @@ public abstract class AbstractPluginTest {
 
     @BeforeEach
     public void setup() {
-        System.out.println(
-            "Gradle " + gradleVersion + " on Java " + JavaVersion.current()
-                + " with Configuration Cache = " + configurationCache
-        );
+        System.out.println("Gradle " + gradleVersion + " on Java " + JavaVersion.current()
+                + " with Configuration Cache = " + configurationCache);
         System.out.println();
         withFile("settings.gradle", "");
     }
@@ -94,11 +91,11 @@ public abstract class AbstractPluginTest {
         List<String> allArguments = new ArrayList<>(Arrays.asList(arguments));
         allArguments.addAll(extraArguments());
         return GradleRunner.create()
-            .withGradleVersion(gradleVersion.getVersion())
-            .withPluginClasspath()
-            .forwardOutput()
-            .withProjectDir(getRootDir())
-            .withArguments(allArguments);
+                .withGradleVersion(gradleVersion.getVersion())
+                .withPluginClasspath()
+                .forwardOutput()
+                .withProjectDir(getRootDir())
+                .withArguments(allArguments);
     }
 
     private List<String> extraArguments() {

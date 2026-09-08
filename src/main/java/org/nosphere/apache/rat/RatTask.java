@@ -19,7 +19,18 @@
 package org.nosphere.apache.rat;
 
 import groovy.lang.Closure;
-
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
+import javax.inject.Inject;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.file.ConfigurableFileCollection;
@@ -58,19 +69,6 @@ import org.gradle.api.tasks.util.PatternSet;
 import org.gradle.workers.WorkQueue;
 import org.gradle.workers.WorkerExecutor;
 
-import javax.inject.Inject;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
-
 @CacheableTask
 public class RatTask extends DefaultTask implements PatternFilterable {
 
@@ -108,11 +106,7 @@ public class RatTask extends DefaultTask implements PatternFilterable {
 
     @Inject
     public RatTask(
-        ProviderFactory providers,
-        ObjectFactory objects,
-        ProjectLayout layout,
-        WorkerExecutor workerExecutor
-    ) {
+            ProviderFactory providers, ObjectFactory objects, ProjectLayout layout, WorkerExecutor workerExecutor) {
         this.providers = providers;
         this.objects = objects;
         this.layout = layout;
@@ -141,16 +135,18 @@ public class RatTask extends DefaultTask implements PatternFilterable {
         this.stylesheet = objects.fileProperty();
 
         this.reportDir = objects.directoryProperty();
-        this.reportDir.set(
-            getProject().getExtensions().getByType(ReportingExtension.class).getBaseDirectory().dir(getName())
-        );
+        this.reportDir.set(getProject()
+                .getExtensions()
+                .getByType(ReportingExtension.class)
+                .getBaseDirectory()
+                .dir(getName()));
 
         ScriptHandler buildscript = getProject().getBuildscript();
         DependencyHandler dependencies = buildscript.getDependencies();
         ConfigurableFileCollection ratClasspath = objects.fileCollection();
-        ratClasspath.from(buildscript.getConfigurations().detachedConfiguration(
-            dependencies.create("org.apache.rat:apache-rat:" + RAT_VERSION)
-        ));
+        ratClasspath.from(buildscript
+                .getConfigurations()
+                .detachedConfiguration(dependencies.create("org.apache.rat:apache-rat:" + RAT_VERSION)));
         this.ratClasspath = ratClasspath;
     }
 
@@ -180,7 +176,8 @@ public class RatTask extends DefaultTask implements PatternFilterable {
     }
 
     public void substringMatcher(String licenseFamilyCategory, String licenseFamilyName, String... substrings) {
-        substringMatchers.add(new SubstringMatcher(licenseFamilyCategory, licenseFamilyName, Arrays.asList(substrings)));
+        substringMatchers.add(
+                new SubstringMatcher(licenseFamilyCategory, licenseFamilyName, Arrays.asList(substrings)));
     }
 
     @Input
@@ -302,7 +299,8 @@ public class RatTask extends DefaultTask implements PatternFilterable {
 
     @TaskAction
     public void rat() {
-        WorkQueue workQueue = workerExecutor.processIsolation(spec -> spec.getClasspath().from(ratClasspath));
+        WorkQueue workQueue =
+                workerExecutor.processIsolation(spec -> spec.getClasspath().from(ratClasspath));
         Provider<RegularFile> stylesheet = this.stylesheet.isPresent() ? this.stylesheet : defaultStylesheet();
         FileTree inputFiles = getInputFiles();
         workQueue.submit(RatWork.class, parameters -> {
@@ -324,12 +322,9 @@ public class RatTask extends DefaultTask implements PatternFilterable {
             RegularFile stylesheetFile = tmpDir.file("default-stylesheet.xsl");
             File stylesheetTarget = stylesheetFile.getAsFile();
             stylesheetTarget.getParentFile().mkdirs();
-            try (
-                InputStream input = new BufferedInputStream(
-                    RatTask.class.getResourceAsStream("apache-rat-output-to-html.xsl")
-                );
-                OutputStream output = new BufferedOutputStream(new FileOutputStream(stylesheetTarget))
-            ) {
+            try (InputStream input = new BufferedInputStream(
+                            RatTask.class.getResourceAsStream("apache-rat-output-to-html.xsl"));
+                    OutputStream output = new BufferedOutputStream(new FileOutputStream(stylesheetTarget))) {
                 byte[] buffer = new byte[8192];
                 int read;
                 while ((read = input.read(buffer)) >= 0) {

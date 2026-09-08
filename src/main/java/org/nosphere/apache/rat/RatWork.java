@@ -18,6 +18,22 @@
  */
 package org.nosphere.apache.rat;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 import org.apache.rat.Defaults;
 import org.apache.rat.ReportConfiguration;
 import org.apache.rat.analysis.IHeaderMatcher;
@@ -30,32 +46,12 @@ import org.apache.rat.report.RatReport;
 import org.apache.rat.report.claim.ClaimStatistic;
 import org.apache.rat.report.xml.XmlReportFactory;
 import org.apache.rat.report.xml.writer.impl.base.XmlWriter;
-
 import org.gradle.api.GradleException;
 import org.gradle.internal.logging.ConsoleRenderer;
 import org.gradle.workers.WorkAction;
-
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-
 import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.io.Writer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public abstract class RatWork implements WorkAction<RatWorkSpec> {
 
@@ -82,8 +78,9 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
                 System.err.println(verboseFailureOutput(xmlReportFile));
             }
             String message = "Apache Rat audit failure - "
-                + stats.getNumUnApproved() + " unapproved license" + (stats.getNumUnApproved() > 1 ? "s" : "") + "\n"
-                + "\tSee " + new ConsoleRenderer().asClickableFileUrl(htmlReportFile);
+                    + stats.getNumUnApproved() + " unapproved license" + (stats.getNumUnApproved() > 1 ? "s" : "")
+                    + "\n"
+                    + "\tSee " + new ConsoleRenderer().asClickableFileUrl(htmlReportFile);
             if (getParameters().getFailOnError().get()) {
                 throw new GradleException(message);
             } else {
@@ -134,9 +131,9 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
             RatReport report = XmlReportFactory.createStandardReport(writer, stats, config);
             report.startReport();
             new FilesReportable(
-                new ArrayList<>(getParameters().getReportedFiles().getFiles()),
-                getParameters().getExcludeFile().getAsFile().getOrNull()
-            ).run(report);
+                            new ArrayList<>(getParameters().getReportedFiles().getFiles()),
+                            getParameters().getExcludeFile().getAsFile().getOrNull())
+                    .run(report);
             report.endReport();
             writer.closeDocument();
         } catch (IOException ex) {
@@ -151,8 +148,7 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
         TransformerFactory factory = TransformerFactory.newInstance();
         try {
             Transformer htmlTransformer = factory.newTransformer(
-                new StreamSource(getParameters().getStylesheet().getAsFile().get())
-            );
+                    new StreamSource(getParameters().getStylesheet().getAsFile().get()));
             htmlTransformer.transform(new StreamSource(xmlReportFile), new StreamResult(htmlReportFile));
 
             Transformer plainTransformer = factory.newTransformer(new StreamSource(Defaults.getPlainStyleSheet()));
@@ -163,16 +159,15 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
     }
 
     private String verboseFailureOutput(File xmlReportFile) {
-        return "Files with unapproved licenses:\n - "
-            + String.join("\n - ", unapprovedFilesFrom(xmlReportFile))
-            + "\n";
+        return "Files with unapproved licenses:\n - " + String.join("\n - ", unapprovedFilesFrom(xmlReportFile)) + "\n";
     }
 
     private List<String> unapprovedFilesFrom(File xmlReportFile) {
         try {
-            NodeList resources = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-                .parse(xmlReportFile)
-                .getElementsByTagName("resource");
+            NodeList resources = DocumentBuilderFactory.newInstance()
+                    .newDocumentBuilder()
+                    .parse(xmlReportFile)
+                    .getElementsByTagName("resource");
             List<String> unapprovedFiles = new ArrayList<>();
             for (Element resource : toElementList(resources)) {
                 for (Element child : toElementList(resource.getChildNodes())) {

@@ -34,8 +34,8 @@ public class RatPlugin implements Plugin<Project> {
             task.setDescription("Runs Apache Rat audit tool");
         });
 
-        project.getPlugins().withType(LifecycleBasePlugin.class, plugin ->
-            project.getTasks().named(LifecycleBasePlugin.CHECK_TASK_NAME).configure(check ->
-                check.dependsOn(rat)));
+        project.getPlugins().withType(LifecycleBasePlugin.class, plugin -> project.getTasks()
+                .named(LifecycleBasePlugin.CHECK_TASK_NAME)
+                .configure(check -> check.dependsOn(rat)));
     }
 }

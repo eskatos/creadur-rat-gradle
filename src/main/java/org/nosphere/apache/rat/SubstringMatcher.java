@@ -18,13 +18,12 @@
  */
 package org.nosphere.apache.rat;
 
-import org.gradle.api.tasks.Input;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import org.gradle.api.tasks.Input;
 
 public class SubstringMatcher implements Serializable {
 
@@ -65,8 +64,8 @@ public class SubstringMatcher implements Serializable {
         }
         SubstringMatcher that = (SubstringMatcher) o;
         return licenseFamilyCategory.equals(that.licenseFamilyCategory)
-            && licenseFamilyName.equals(that.licenseFamilyName)
-            && substrings.equals(that.substrings);
+                && licenseFamilyName.equals(that.licenseFamilyName)
+                && substrings.equals(that.substrings);
     }
 
     @Override
@@ -77,7 +76,7 @@ public class SubstringMatcher implements Serializable {
     @Override
     public String toString() {
         return "SubstringMatcher(licenseFamilyCategory=" + licenseFamilyCategory
-            + ", licenseFamilyName=" + licenseFamilyName
-            + ", substrings=" + substrings + ")";
+                + ", licenseFamilyName=" + licenseFamilyName
+                + ", substrings=" + substrings + ")";
     }
 }

@@ -25,17 +25,17 @@ public class BaseRatPluginTest extends AbstractPluginTest {
     @Test
     public void doNotCreateRatTask() {
 
-        withBuildScript(String.join("\n",
-            "plugins {",
-            "    id(\"org.nosphere.apache.rat-base\")",
-            "}",
-            "task(\"assertion\") {",
-            "    def hasRat = project.tasks.findByName('rat') != null",
-            "    doLast {",
-            "      assert !hasRat",
-            "    }",
-            "}"
-        ));
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"org.nosphere.apache.rat-base\")",
+                "}",
+                "task(\"assertion\") {",
+                "    def hasRat = project.tasks.findByName('rat') != null",
+                "    doLast {",
+                "      assert !hasRat",
+                "    }",
+                "}"));
 
         build("assertion");
     }
@@ -43,18 +43,18 @@ public class BaseRatPluginTest extends AbstractPluginTest {
     @Test
     public void allowCreationOfArbitraryRatTasks() {
 
-        withBuildScript(String.join("\n",
-            "plugins {",
-            "    id(\"org.nosphere.apache.rat-base\")",
-            "}",
-            "task someRat(type: org.nosphere.apache.rat.RatTask) {",
-            "    verbose.set(true)",
-            "    inputDir.set(rootDir)",
-            "    excludes = [",
-            "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'",
-            "    ]",
-            "}"
-        ));
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"org.nosphere.apache.rat-base\")",
+                "}",
+                "task someRat(type: org.nosphere.apache.rat.RatTask) {",
+                "    verbose.set(true)",
+                "    inputDir.set(rootDir)",
+                "    excludes = [",
+                "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'",
+                "    ]",
+                "}"));
 
         build("someRat");
     }
