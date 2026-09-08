@@ -33,6 +33,11 @@ plugins {
 group = "org.nosphere.apache"
 version = "0.8.3-SNAPSHOT"
 
+tasks.updateDaemonJvm {
+    languageVersion = JavaLanguageVersion.of(21)
+    vendor = JvmVendorSpec.ADOPTIUM
+}
+
 gradlePlugin {
     website = "https://github.com/eskatos/creadur-rat-gradle"
     vcsUrl = "https://github.com/eskatos/creadur-rat-gradle"
@@ -61,9 +66,14 @@ gradlePlugin {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
+        languageVersion = JavaLanguageVersion.of(21)
+        vendor = JvmVendorSpec.ADOPTIUM
     }
     withSourcesJar()
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release = 8
 }
 
 repositories {
