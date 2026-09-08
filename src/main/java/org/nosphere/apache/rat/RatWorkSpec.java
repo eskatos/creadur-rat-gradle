@@ -16,21 +16,34 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.nosphere.apache.rat
+package org.nosphere.apache.rat;
 
-import org.gradle.api.tasks.Input
-import java.io.Serializable
+import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.RegularFileProperty;
+import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.Property;
+import org.gradle.workers.WorkParameters;
 
+public interface RatWorkSpec extends WorkParameters {
 
-data class SubstringMatcher(
+    Property<Boolean> getVerbose();
 
-    @get:Input
-    val licenseFamilyCategory: String,
+    Property<Boolean> getFailOnError();
 
-    @get:Input
-    val licenseFamilyName: String,
+    Property<Boolean> getAddDefaultMatchers();
 
-    @get:Input
-    val substrings: List<String>
+    ListProperty<SubstringMatcher> getSubstringMatchers();
 
-) : Serializable
+    ListProperty<String> getApprovedLicenses();
+
+    DirectoryProperty getBaseDir();
+
+    ConfigurableFileCollection getReportedFiles();
+
+    RegularFileProperty getExcludeFile();
+
+    RegularFileProperty getStylesheet();
+
+    DirectoryProperty getReportDirectory();
+}

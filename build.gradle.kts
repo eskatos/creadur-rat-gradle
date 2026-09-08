@@ -23,10 +23,11 @@ import org.nosphere.honker.gradle.HonkerGenLicenseTask
 import org.nosphere.honker.gradle.HonkerGenNoticeTask
 
 plugins {
-    `kotlin-dsl`
+    `java-gradle-plugin`
+    `embedded-kotlin`
     `maven-publish`
     id("com.gradle.plugin-publish") version "2.1.1"
-    id("org.nosphere.apache.rat") version "0.8.1"
+    id("org.nosphere.apache.rat") version "0.8.2"
     id("org.nosphere.honker") version "0.4.0"
 }
 
@@ -46,10 +47,14 @@ gradlePlugin {
                 }
             }
         }
-        named("org.nosphere.apache.rat-base") {
+        create("org.nosphere.apache.rat-base") {
+            id = "org.nosphere.apache.rat-base"
+            implementationClass = "org.nosphere.apache.rat.RatBasePlugin"
             displayName = "Apache RAT Base Gradle Plugin"
         }
-        named("org.nosphere.apache.rat") {
+        create("org.nosphere.apache.rat") {
+            id = "org.nosphere.apache.rat"
+            implementationClass = "org.nosphere.apache.rat.RatPlugin"
             displayName = "Apache RAT Gradle Plugin"
         }
     }
