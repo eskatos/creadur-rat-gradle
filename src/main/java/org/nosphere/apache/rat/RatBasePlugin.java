@@ -16,21 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.nosphere.apache
+package org.nosphere.apache.rat;
 
-import org.nosphere.apache.rat.RatTask
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
 
-plugins {
-    id("org.nosphere.apache.rat-base")
-}
+public class RatBasePlugin implements Plugin<Project> {
 
-val rat = tasks.register("rat", RatTask::class.java) {
-    group = LifecycleBasePlugin.VERIFICATION_GROUP
-    description = "Runs Apache Rat audit tool"
-}
-
-plugins.withType(LifecycleBasePlugin::class.java) {
-    tasks.named(LifecycleBasePlugin.CHECK_TASK_NAME).configure {
-        dependsOn(rat)
+    @Override
+    public void apply(Project project) {
+        project.getPluginManager().apply("reporting-base");
     }
 }

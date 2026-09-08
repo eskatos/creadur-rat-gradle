@@ -23,15 +23,21 @@ import org.nosphere.honker.gradle.HonkerGenLicenseTask
 import org.nosphere.honker.gradle.HonkerGenNoticeTask
 
 plugins {
-    `kotlin-dsl`
+    `java-gradle-plugin`
     `maven-publish`
     id("com.gradle.plugin-publish") version "2.1.1"
-    id("org.nosphere.apache.rat") version "0.8.1"
+    id("com.diffplug.spotless") version "8.10.2"
+    id("org.nosphere.apache.rat") version "0.8.2"
     id("org.nosphere.honker") version "0.4.0"
 }
 
 group = "org.nosphere.apache"
-version = "0.8.2"
+version = "0.8.3-SNAPSHOT"
+
+tasks.updateDaemonJvm {
+    languageVersion = JavaLanguageVersion.of(21)
+    vendor = JvmVendorSpec.ADOPTIUM
+}
 
 gradlePlugin {
     website = "https://github.com/eskatos/creadur-rat-gradle"
@@ -46,10 +52,14 @@ gradlePlugin {
                 }
             }
         }
-        named("org.nosphere.apache.rat-base") {
+        create("org.nosphere.apache.rat-base") {
+            id = "org.nosphere.apache.rat-base"
+            implementationClass = "org.nosphere.apache.rat.RatBasePlugin"
             displayName = "Apache RAT Base Gradle Plugin"
         }
-        named("org.nosphere.apache.rat") {
+        create("org.nosphere.apache.rat") {
+            id = "org.nosphere.apache.rat"
+            implementationClass = "org.nosphere.apache.rat.RatPlugin"
             displayName = "Apache RAT Gradle Plugin"
         }
     }
@@ -57,9 +67,14 @@ gradlePlugin {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
+        languageVersion = JavaLanguageVersion.of(21)
+        vendor = JvmVendorSpec.ADOPTIUM
     }
     withSourcesJar()
+}
+
+tasks.withType<JavaCompile>().configureEach {
+    options.release = 8
 }
 
 repositories {
@@ -69,8 +84,42 @@ repositories {
 dependencies {
     compileOnly("org.apache.rat:apache-rat:0.15")
 
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(platform("org.junit:junit-bom:5.14.4"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation(gradleTestKit())
+
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+spotless {
+    java {
+        licenseHeader(
+            """
+            /*
+             * Licensed to the Apache Software Foundation (ASF) under one
+             * or more contributor license agreements.  See the NOTICE file
+             * distributed with this work for additional information
+             * regarding copyright ownership.  The ASF licenses this file
+             * to you under the Apache License, Version 2.0 (the
+             * "License"); you may not use this file except in compliance
+             * with the License.  You may obtain a copy of the License at
+             *
+             *   http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing,
+             * software distributed under the License is distributed on an
+             * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+             * KIND, either express or implied.  See the License for the
+             * specific language governing permissions and limitations
+             * under the License.
+             */
+            """.trimIndent()
+        )
+        trimTrailingWhitespace()
+        endWithNewline()
+        removeUnusedImports()
+        palantirJavaFormat()
+    }
 }
 
 tasks.validatePlugins {
@@ -89,6 +138,10 @@ val testedGradleVersions = listOf(
 fun javaLanguageVersionFor(gradleVersion: String): Int =
     if (GradleVersion.version(gradleVersion) >= GradleVersion.version("8.10")) 17
     else 8
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
 
 tasks.test {
     description = "Runs the test suite with Gradle $wrapperGradleVersion."
@@ -141,8 +194,8 @@ tasks.rat {
     verbose = true
     exclude(
         "README.md", "CODE_OF_CONDUCT.md",
-        ".gradletasknamecache", "gradle/wrapper/**", "gradlew*", "build/**", // Gradle
-        ".kotlin/**", // Kotlin
+        ".gradletasknamecache", "gradle/wrapper/**", "gradle/gradle-daemon-jvm.properties",
+        "gradlew*", "build/**", // Gradle
         ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**", ".editorconfig", // IDEs
     )
     notCompatibleWithConfigurationCache("https://github.com/eskatos/creadur-rat-gradle/issues/23")
