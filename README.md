@@ -11,7 +11,7 @@ In your `build.gradle(.kts)` file:
 
 ```kotlin
 plugins {
-    id("org.nosphere.apache.rat") version "0.8.2"
+    id("org.nosphere.apache.rat") version "0.9.0"
 }
 ```
 
@@ -115,6 +115,7 @@ Execution failed for task ':rat'.
 
 | Plugin  | Min Java | Min Gradle | Max Gradle | Configuration Cache | Build Cache |
 |---------|----------|------------|------------|---------------------|-------------|
+| `0.9.0` | `1.8`    | `6.0`      | `9.x`      | 🟢                  | 🟢          |
 | `0.8.2` | `1.8`    | `6.0`      | `9.x`      | 🟢                  | 🟢          |
 | `0.8.1` | `1.8`    | `6.0`      | `8.x`      | 🟢                  | 🟢          |
 | `0.8.0` | `1.8`    | `6.0`      | `8.x`      | 🟡                  | 🟢          |
