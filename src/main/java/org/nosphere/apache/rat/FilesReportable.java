@@ -19,70 +19,24 @@
 package org.nosphere.apache.rat;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.List;
-import org.apache.rat.Report;
 import org.apache.rat.api.RatException;
 import org.apache.rat.document.impl.FileDocument;
 import org.apache.rat.report.IReportable;
 import org.apache.rat.report.RatReport;
-import org.gradle.api.GradleException;
 
 class FilesReportable implements IReportable {
 
     private final List<File> files;
 
-    private final File excludeFile;
-
-    FilesReportable(List<File> files, File excludeFile) {
+    FilesReportable(List<File> files) {
         this.files = files;
-        this.excludeFile = excludeFile;
     }
 
     @Override
     public void run(RatReport report) throws RatException {
-        FilenameFilter filter = excludeFileFilter();
         for (File file : files) {
-            if (filter == null || filter.accept(file.getParentFile(), file.getName())) {
-                report.report(new FileDocument(file));
-            }
-        }
-    }
-
-    private FilenameFilter excludeFileFilter() {
-        if (excludeFile == null || !excludeFile.isFile()) {
-            return null;
-        }
-        List<String> lines = new ArrayList<>();
-        try {
-            for (String line : Files.readAllLines(excludeFile.toPath(), StandardCharsets.UTF_8)) {
-                if (!line.trim().isEmpty()) {
-                    lines.add(line);
-                }
-            }
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-        if (lines.isEmpty()) {
-            return null;
-        }
-        return createFilenameFilter(lines);
-    }
-
-    private FilenameFilter createFilenameFilter(List<String> lines) {
-        try {
-            Method parseExclusions = Report.class.getDeclaredMethod("parseExclusions", List.class);
-            parseExclusions.setAccessible(true);
-            return (FilenameFilter) parseExclusions.invoke(null, lines);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-            throw new GradleException(ex.getMessage(), ex);
+            report.report(new FileDocument(file));
         }
     }
 }

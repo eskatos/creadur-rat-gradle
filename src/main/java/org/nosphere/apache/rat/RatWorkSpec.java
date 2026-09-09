@@ -20,7 +20,6 @@ package org.nosphere.apache.rat;
 
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.workers.WorkParameters;
@@ -40,10 +39,6 @@ public interface RatWorkSpec extends WorkParameters {
     DirectoryProperty getBaseDir();
 
     ConfigurableFileCollection getReportedFiles();
-
-    RegularFileProperty getExcludeFile();
-
-    RegularFileProperty getStylesheet();
 
     DirectoryProperty getReportDirectory();
 }

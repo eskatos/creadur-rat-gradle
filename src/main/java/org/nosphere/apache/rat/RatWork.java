@@ -131,8 +131,7 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
             RatReport report = XmlReportFactory.createStandardReport(writer, stats, config);
             report.startReport();
             new FilesReportable(
-                            new ArrayList<>(getParameters().getReportedFiles().getFiles()),
-                            getParameters().getExcludeFile().getAsFile().getOrNull())
+                            new ArrayList<>(getParameters().getReportedFiles().getFiles()))
                     .run(report);
             report.endReport();
             writer.closeDocument();
@@ -148,7 +147,7 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
         TransformerFactory factory = TransformerFactory.newInstance();
         try {
             Transformer htmlTransformer = factory.newTransformer(
-                    new StreamSource(getParameters().getStylesheet().getAsFile().get()));
+                    new StreamSource(RatWork.class.getResourceAsStream("apache-rat-output-to-html.xsl")));
             htmlTransformer.transform(new StreamSource(xmlReportFile), new StreamResult(htmlReportFile));
 
             Transformer plainTransformer = factory.newTransformer(new StreamSource(Defaults.getPlainStyleSheet()));

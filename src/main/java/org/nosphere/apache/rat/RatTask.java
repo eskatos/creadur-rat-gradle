@@ -19,14 +19,6 @@
 package org.nosphere.apache.rat;
 
 import groovy.lang.Closure;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
@@ -35,31 +27,24 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.ConfigurableFileTree;
-import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.file.FileTreeElement;
 import org.gradle.api.file.ProjectLayout;
-import org.gradle.api.file.RegularFile;
-import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.initialization.dsl.ScriptHandler;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
-import org.gradle.api.provider.Provider;
-import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.reporting.ReportingExtension;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.CacheableTask;
 import org.gradle.api.tasks.Classpath;
 import org.gradle.api.tasks.Console;
 import org.gradle.api.tasks.Input;
-import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Nested;
-import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
@@ -75,8 +60,6 @@ public class RatTask extends DefaultTask implements PatternFilterable {
     private static final String RAT_VERSION = "0.15";
 
     private final PatternSet patternSet = new PatternSet().exclude("**/.gradle/**");
-
-    private final ProviderFactory providers;
 
     private final ObjectFactory objects;
 
@@ -96,18 +79,12 @@ public class RatTask extends DefaultTask implements PatternFilterable {
 
     private final ListProperty<String> approvedLicenses;
 
-    private final RegularFileProperty excludeFile;
-
-    private final RegularFileProperty stylesheet;
-
     private final DirectoryProperty reportDir;
 
     private final FileCollection ratClasspath;
 
     @Inject
-    public RatTask(
-            ProviderFactory providers, ObjectFactory objects, ProjectLayout layout, WorkerExecutor workerExecutor) {
-        this.providers = providers;
+    public RatTask(ObjectFactory objects, ProjectLayout layout, WorkerExecutor workerExecutor) {
         this.objects = objects;
         this.layout = layout;
         this.workerExecutor = workerExecutor;
@@ -129,10 +106,6 @@ public class RatTask extends DefaultTask implements PatternFilterable {
 
         this.approvedLicenses = objects.listProperty(String.class);
         this.approvedLicenses.set(Collections.<String>emptyList());
-
-        this.excludeFile = objects.fileProperty();
-
-        this.stylesheet = objects.fileProperty();
 
         this.reportDir = objects.directoryProperty();
         this.reportDir.set(getProject()
@@ -272,20 +245,6 @@ public class RatTask extends DefaultTask implements PatternFilterable {
         return fileTree;
     }
 
-    @InputFile
-    @Optional
-    @PathSensitive(PathSensitivity.NONE)
-    public RegularFileProperty getExcludeFile() {
-        return excludeFile;
-    }
-
-    @InputFile
-    @Optional
-    @PathSensitive(PathSensitivity.NONE)
-    public RegularFileProperty getStylesheet() {
-        return stylesheet;
-    }
-
     @OutputDirectory
     public DirectoryProperty getReportDir() {
         return reportDir;
@@ -301,7 +260,6 @@ public class RatTask extends DefaultTask implements PatternFilterable {
     public void rat() {
         WorkQueue workQueue =
                 workerExecutor.processIsolation(spec -> spec.getClasspath().from(ratClasspath));
-        Provider<RegularFile> stylesheet = this.stylesheet.isPresent() ? this.stylesheet : defaultStylesheet();
         FileTree inputFiles = getInputFiles();
         workQueue.submit(RatWork.class, parameters -> {
             parameters.getVerbose().set(verbose);
@@ -311,33 +269,7 @@ public class RatTask extends DefaultTask implements PatternFilterable {
             parameters.getApprovedLicenses().set(approvedLicenses);
             parameters.getBaseDir().set(inputDir);
             parameters.getReportedFiles().from(inputFiles);
-            parameters.getExcludeFile().set(excludeFile);
-            parameters.getStylesheet().set(stylesheet);
             parameters.getReportDirectory().set(reportDir);
         });
-    }
-
-    private Provider<RegularFile> defaultStylesheet() {
-        return getTemporaryDirectory().map(tmpDir -> {
-            RegularFile stylesheetFile = tmpDir.file("default-stylesheet.xsl");
-            File stylesheetTarget = stylesheetFile.getAsFile();
-            stylesheetTarget.getParentFile().mkdirs();
-            try (InputStream input = new BufferedInputStream(
-                            RatTask.class.getResourceAsStream("apache-rat-output-to-html.xsl"));
-                    OutputStream output = new BufferedOutputStream(new FileOutputStream(stylesheetTarget))) {
-                byte[] buffer = new byte[8192];
-                int read;
-                while ((read = input.read(buffer)) >= 0) {
-                    output.write(buffer, 0, read);
-                }
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
-            return stylesheetFile;
-        });
-    }
-
-    private Provider<Directory> getTemporaryDirectory() {
-        return layout.dir(providers.provider(this::getTemporaryDir));
     }
 }

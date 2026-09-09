@@ -124,10 +124,6 @@ public abstract class AbstractPluginTest {
                 result.getOutput().contains(unexpected), () -> "Expected build output not to contain: " + unexpected);
     }
 
-    protected boolean isGradleMin63() {
-        return isGreaterOrEqualThan(gradleVersion, "6.3");
-    }
-
     protected static boolean isGreaterOrEqualThan(GradleVersion gradleVersion, String version) {
         return gradleVersion.compareTo(GradleVersion.version(version)) >= 0;
     }

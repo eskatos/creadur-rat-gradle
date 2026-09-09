@@ -56,7 +56,7 @@ public class RatPluginTest extends AbstractPluginTest {
         assertRatTask(build("check"), SUCCESS);
         assertGeneratedAllReports();
 
-        assertRatTask(build("check"), isGradleMin63() ? UP_TO_DATE : SUCCESS);
+        assertRatTask(build("check"), UP_TO_DATE);
 
         String gradleUserHome = new File(getRootDir(), "guh").getCanonicalPath();
 
@@ -112,7 +112,7 @@ public class RatPluginTest extends AbstractPluginTest {
         assertGeneratedAllReports();
         assertOutputContainsAuditFailureMessage(result);
 
-        assertRatTask(build("check"), isGradleMin63() ? UP_TO_DATE : SUCCESS);
+        assertRatTask(build("check"), UP_TO_DATE);
     }
 
     @Test
@@ -172,6 +172,40 @@ public class RatPluginTest extends AbstractPluginTest {
 
         assertRatTask(buildAndFail("check", "-s"), FAILED);
         assertGeneratedAllReports();
+    }
+
+    @Test
+    public void stylesheetPropertyIsGone() {
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    stylesheet.set(file(\"custom.xsl\"))",
+                "}"));
+
+        BuildResult result = buildAndFail("rat");
+        assertRatTaskDidNotRun(result);
+        assertOutputContains(result, "unknown property 'stylesheet'");
+    }
+
+    @Test
+    public void excludeFilePropertyIsGone() {
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    excludeFile.set(file(\".rat-excludes.txt\"))",
+                "}"));
+
+        BuildResult result = buildAndFail("rat");
+        assertRatTaskDidNotRun(result);
+        assertOutputContains(result, "unknown property 'excludeFile'");
     }
 
     /**
