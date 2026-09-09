@@ -149,7 +149,7 @@ public class RatPluginTest extends AbstractPluginTest {
                 "    addDefaultMatchers.set(false)",
                 "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
                 "}"));
-        withFile("default-licensed.sh", commentedApacheLicenseHeader());
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
 
         assertRatTask(buildAndFail("check", "-s"), FAILED);
         assertGeneratedAllReports();
@@ -168,7 +168,7 @@ public class RatPluginTest extends AbstractPluginTest {
                 "    approvedLicenses.add(\"MIT\")",
                 "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
                 "}"));
-        withFile("default-licensed.sh", commentedApacheLicenseHeader());
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
 
         assertRatTask(buildAndFail("check", "-s"), FAILED);
         assertGeneratedAllReports();
@@ -224,10 +224,6 @@ public class RatPluginTest extends AbstractPluginTest {
         assertOutputContains(result, relativeToRootDir(htmlReportFile()).replace("\\", "/"));
     }
 
-    private void assertOutputContains(BuildResult result, String expected) {
-        assertTrue(result.getOutput().contains(expected), () -> "Expected build output to contain: " + expected);
-    }
-
     private void assertGeneratedAllReports() {
         assertTrue(xmlReportFile().isFile());
         assertTrue(plainReportFile().isFile());
@@ -249,31 +245,4 @@ public class RatPluginTest extends AbstractPluginTest {
     private String relativeToRootDir(File file) {
         return getRootDir().toPath().relativize(file.toPath()).toString();
     }
-
-    private static String commentedApacheLicenseHeader() {
-        StringBuilder header = new StringBuilder();
-        for (String line : APACHE_LICENSE_HEADER) {
-            header.append("# ").append(line).append("\n");
-        }
-        return header.toString();
-    }
-
-    private static final String[] APACHE_LICENSE_HEADER = {
-        "Licensed to the Apache Software Foundation (ASF) under one",
-        "or more contributor license agreements.  See the NOTICE file",
-        "distributed with this work for additional information",
-        "regarding copyright ownership.  The ASF licenses this file",
-        "to you under the Apache License, Version 2.0 (the",
-        "\"License\"); you may not use this file except in compliance",
-        "with the License.  You may obtain a copy of the License at",
-        "",
-        "  http://www.apache.org/licenses/LICENSE-2.0",
-        "",
-        "Unless required by applicable law or agreed to in writing,",
-        "software distributed under the License is distributed on an",
-        "\"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY",
-        "KIND, either express or implied.  See the License for the",
-        "specific language governing permissions and limitations",
-        "under the License."
-    };
 }

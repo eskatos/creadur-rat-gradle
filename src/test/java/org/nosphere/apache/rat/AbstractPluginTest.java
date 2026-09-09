@@ -18,6 +18,10 @@
  */
 package org.nosphere.apache.rat;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -73,8 +77,26 @@ public abstract class AbstractPluginTest {
         }
     }
 
+    protected void withBinaryFile(String path, byte[] bytes) {
+        try {
+            Files.write(new File(getRootDir(), path).toPath(), bytes);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
     protected void withBuildScript(String text) {
         withFile("build.gradle", text);
+    }
+
+    protected String readReport(String name) {
+        try {
+            return new String(
+                    Files.readAllBytes(new File(getRootDir(), "build/reports/rat/" + name).toPath()),
+                    StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     protected BuildResult build(String... arguments) {
@@ -87,6 +109,19 @@ public abstract class AbstractPluginTest {
 
     protected TaskOutcome outcomeOf(BuildResult result, String path) {
         return result.task(path) == null ? null : result.task(path).getOutcome();
+    }
+
+    protected void assertRatTaskDidNotRun(BuildResult result) {
+        assertNull(outcomeOf(result, ":rat"));
+    }
+
+    protected void assertOutputContains(BuildResult result, String expected) {
+        assertTrue(result.getOutput().contains(expected), () -> "Expected build output to contain: " + expected);
+    }
+
+    protected void assertOutputDoesNotContain(BuildResult result, String unexpected) {
+        assertFalse(
+                result.getOutput().contains(unexpected), () -> "Expected build output not to contain: " + unexpected);
     }
 
     protected boolean isGradleMin63() {
