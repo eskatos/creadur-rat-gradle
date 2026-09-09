@@ -82,7 +82,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.apache.rat:apache-rat:0.15")
+    compileOnly("org.apache.rat:apache-rat-core:0.17")
 
     testImplementation(platform("org.junit:junit-bom:5.14.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")

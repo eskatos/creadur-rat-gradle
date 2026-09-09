@@ -21,22 +21,36 @@ package org.nosphere.apache.rat;
 import java.io.File;
 import java.util.List;
 import org.apache.rat.api.RatException;
-import org.apache.rat.document.impl.FileDocument;
+import org.apache.rat.document.DocumentName;
+import org.apache.rat.document.DocumentNameMatcher;
+import org.apache.rat.document.FileDocument;
 import org.apache.rat.report.IReportable;
 import org.apache.rat.report.RatReport;
 
 class FilesReportable implements IReportable {
 
+    private final File baseDir;
+
+    private final DocumentName baseName;
+
     private final List<File> files;
 
-    FilesReportable(List<File> files) {
+    FilesReportable(File baseDir, List<File> files) {
+        this.baseDir = baseDir;
+        this.baseName = DocumentName.builder(baseDir).build();
         this.files = files;
     }
 
     @Override
     public void run(RatReport report) throws RatException {
         for (File file : files) {
-            report.report(new FileDocument(file));
+            DocumentName name = DocumentName.builder(file).setBaseName(baseDir).build();
+            report.report(new FileDocument(name, file, DocumentNameMatcher.MATCHES_ALL));
         }
+    }
+
+    @Override
+    public DocumentName getName() {
+        return baseName;
     }
 }

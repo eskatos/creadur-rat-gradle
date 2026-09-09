@@ -18,178 +18,210 @@
  */
 package org.nosphere.apache.rat;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.io.Writer;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import org.apache.commons.io.function.IOSupplier;
 import org.apache.rat.Defaults;
 import org.apache.rat.ReportConfiguration;
+import org.apache.rat.Reporter;
 import org.apache.rat.analysis.IHeaderMatcher;
-import org.apache.rat.analysis.util.HeaderMatcherMultiplexer;
-import org.apache.rat.anttasks.SubstringLicenseMatcher;
+import org.apache.rat.analysis.TikaProcessor;
+import org.apache.rat.analysis.matchers.OrMatcher;
+import org.apache.rat.analysis.matchers.SimpleTextMatcher;
+import org.apache.rat.api.Document;
 import org.apache.rat.api.RatException;
+import org.apache.rat.commandline.StyleSheets;
+import org.apache.rat.license.ILicense;
 import org.apache.rat.license.ILicenseFamily;
-import org.apache.rat.license.SimpleLicenseFamily;
-import org.apache.rat.report.RatReport;
+import org.apache.rat.license.LicenseSetFactory.LicenseFilter;
 import org.apache.rat.report.claim.ClaimStatistic;
-import org.apache.rat.report.xml.XmlReportFactory;
-import org.apache.rat.report.xml.writer.impl.base.XmlWriter;
 import org.gradle.api.GradleException;
 import org.gradle.internal.logging.ConsoleRenderer;
 import org.gradle.workers.WorkAction;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 public abstract class RatWork implements WorkAction<RatWorkSpec> {
 
+    private static final List<String> SCRIPT_MEDIA_TYPES = Arrays.asList(
+            "application/x-sh", "application/x-bat", "application/javascript", "application/rls-services+xml");
+
     @Override
     public void execute() {
-
-        File reportDir = getParameters().getReportDirectory().getAsFile().get();
+        restoreScriptDocumentTypes();
+        RatWorkSpec spec = getParameters();
+        File reportDir = spec.getReportDirectory().getAsFile().get();
         reportDir.mkdirs();
-
-        File xmlReportFile = new File(reportDir, "rat-report.xml");
-        File plainReportFile = new File(reportDir, "rat-report.txt");
-        File htmlReportFile = new File(reportDir, "index.html");
-
-        ReportConfiguration config = createReportConfiguration(getParameters());
-
-        ClaimStatistic stats = new ClaimStatistic();
-
-        generateXmlReport(config, stats, xmlReportFile);
-
-        transformReport(xmlReportFile, htmlReportFile, plainReportFile);
-
-        if (stats.getNumUnApproved() > 0) {
-            if (getParameters().getVerbose().get()) {
-                System.err.println(verboseFailureOutput(xmlReportFile));
-            }
-            String message = "Apache Rat audit failure - "
-                    + stats.getNumUnApproved() + " unapproved license" + (stats.getNumUnApproved() > 1 ? "s" : "")
-                    + "\n"
-                    + "\tSee " + new ConsoleRenderer().asClickableFileUrl(htmlReportFile);
-            if (getParameters().getFailOnError().get()) {
-                throw new GradleException(message);
-            } else {
-                System.err.println(message);
-            }
-        }
+        ReportConfiguration config = configure(spec);
+        Reporter reporter = new Reporter(config);
+        ClaimStatistic stats = runAudit(reporter);
+        report(reporter, reportDir);
+        verdict(spec, config, stats, reporter, reportDir);
     }
 
-    private ReportConfiguration createReportConfiguration(RatWorkSpec spec) {
-
-        ReportConfiguration config = new ReportConfiguration();
-
-        List<IHeaderMatcher> matchers = new ArrayList<>();
-        if (spec.getAddDefaultMatchers().get()) {
-            matchers.add(Defaults.createDefaultMatcher());
+    private static void verdict(
+            RatWorkSpec spec, ReportConfiguration config, ClaimStatistic stats, Reporter reporter, File reportDir) {
+        int unapproved = stats.getCounter(ClaimStatistic.Counter.UNAPPROVED);
+        if (config.getClaimValidator().isValid(ClaimStatistic.Counter.UNAPPROVED, unapproved)) {
+            return;
         }
-        for (SubstringMatcher substringMatcher : spec.getSubstringMatchers().get()) {
-            SubstringLicenseMatcher matcher = new SubstringLicenseMatcher();
-            matcher.setLicenseFamilyCategory(substringMatcher.getLicenseFamilyCategory());
-            matcher.setLicenseFamilyName(substringMatcher.getLicenseFamilyName());
-            for (String substring : substringMatcher.getSubstrings()) {
-                SubstringLicenseMatcher.Pattern pattern = new SubstringLicenseMatcher.Pattern();
-                pattern.setSubstring(substring);
-                matcher.addConfiguredPattern(pattern);
-            }
-            matchers.add(matcher);
+        if (spec.getVerbose().get()) {
+            System.err.println(unapprovedFilesListing(reporter));
         }
-        config.setHeaderMatcher(new HeaderMatcherMultiplexer(matchers));
-
-        if (spec.getApprovedLicenses().get().isEmpty()) {
-            config.setApproveDefaultLicenses(true);
-        } else {
-            config.setApproveDefaultLicenses(false);
-            List<ILicenseFamily> families = new ArrayList<>();
-            for (String familyName : spec.getApprovedLicenses().get()) {
-                families.add(new SimpleLicenseFamily(familyName));
-            }
-            config.setApprovedLicenseNames(families);
+        String message = "Apache Rat audit failure - " + unapproved + " unapproved license"
+                + (unapproved > 1 ? "s" : "") + "\n"
+                + "\tSee " + new ConsoleRenderer().asClickableFileUrl(new File(reportDir, "index.html"));
+        if (spec.getFailOnError().get()) {
+            throw new GradleException(message);
         }
-
-        return config;
+        System.err.println(message);
     }
 
-    private void generateXmlReport(ReportConfiguration config, ClaimStatistic stats, File xmlReportFile) {
-
-        try (Writer xmlFileWriter = Files.newBufferedWriter(xmlReportFile.toPath(), StandardCharsets.UTF_8)) {
-            XmlWriter writer = new XmlWriter(xmlFileWriter);
-            RatReport report = XmlReportFactory.createStandardReport(writer, stats, config);
-            report.startReport();
-            new FilesReportable(
-                            new ArrayList<>(getParameters().getReportedFiles().getFiles()))
-                    .run(report);
-            report.endReport();
-            writer.closeDocument();
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
+    private static ClaimStatistic runAudit(Reporter reporter) {
+        try {
+            return reporter.execute();
         } catch (RatException ex) {
             throw new GradleException(ex.getMessage(), ex);
         }
     }
 
-    private void transformReport(File xmlReportFile, File htmlReportFile, File plainReportFile) {
+    private static void report(Reporter reporter, File reportDir) {
+        writeReport(reporter, StyleSheets.XML.getStyleSheet(), new File(reportDir, "rat-report.xml"));
+        writeReport(reporter, StyleSheets.PLAIN.getStyleSheet(), new File(reportDir, "rat-report.txt"));
+        writeHtmlReport(reporter, new File(reportDir, "index.html"));
+    }
 
-        TransformerFactory factory = TransformerFactory.newInstance();
+    private static void writeReport(Reporter reporter, IOSupplier<InputStream> stylesheet, File target) {
         try {
-            Transformer htmlTransformer = factory.newTransformer(
-                    new StreamSource(RatWork.class.getResourceAsStream("apache-rat-output-to-html.xsl")));
-            htmlTransformer.transform(new StreamSource(xmlReportFile), new StreamResult(htmlReportFile));
+            reporter.output(stylesheet, () -> new FileOutputStream(target));
+        } catch (RatException ex) {
+            throw new GradleException(ex.getMessage(), ex);
+        }
+    }
 
-            Transformer plainTransformer = factory.newTransformer(new StreamSource(Defaults.getPlainStyleSheet()));
-            plainTransformer.transform(new StreamSource(xmlReportFile), new StreamResult(plainReportFile));
+    private static String unapprovedFilesListing(Reporter reporter) {
+        ByteArrayOutputStream listing = new ByteArrayOutputStream();
+        try {
+            reporter.output(StyleSheets.UNAPPROVED_LICENSES.getStyleSheet(), () -> listing);
+        } catch (RatException ex) {
+            throw new GradleException(ex.getMessage(), ex);
+        }
+        return new String(listing.toByteArray(), StandardCharsets.UTF_8);
+    }
+
+    private static void writeHtmlReport(Reporter reporter, File target) {
+        try (InputStream stylesheet = RatWork.class.getResourceAsStream("apache-rat-output-to-html.xsl");
+                OutputStream output = new FileOutputStream(target)) {
+            Transformer transformer = TransformerFactory.newInstance().newTransformer(new StreamSource(stylesheet));
+            transformer.transform(new DOMSource(reporter.getDocument()), new StreamResult(output));
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
         } catch (TransformerException ex) {
             throw new GradleException(ex.getMessage(), ex);
         }
     }
 
-    private String verboseFailureOutput(File xmlReportFile) {
-        return "Files with unapproved licenses:\n - " + String.join("\n - ", unapprovedFilesFrom(xmlReportFile)) + "\n";
-    }
-
-    private List<String> unapprovedFilesFrom(File xmlReportFile) {
+    @SuppressWarnings("unchecked")
+    private static void restoreScriptDocumentTypes() {
         try {
-            NodeList resources = DocumentBuilderFactory.newInstance()
-                    .newDocumentBuilder()
-                    .parse(xmlReportFile)
-                    .getElementsByTagName("resource");
-            List<String> unapprovedFiles = new ArrayList<>();
-            for (Element resource : toElementList(resources)) {
-                for (Element child : toElementList(resource.getChildNodes())) {
-                    if ("license-approval".equals(child.getTagName()) && "false".equals(child.getAttribute("name"))) {
-                        unapprovedFiles.add(resource.getAttribute("name"));
-                        break;
-                    }
-                }
+            Field documentTypeMap = TikaProcessor.class.getDeclaredField("DOCUMENT_TYPE_MAP");
+            documentTypeMap.setAccessible(true);
+            Map<String, Document.Type> typesByMediaType = (Map<String, Document.Type>) documentTypeMap.get(null);
+            for (String mediaType : SCRIPT_MEDIA_TYPES) {
+                typesByMediaType.put(mediaType, Document.Type.STANDARD);
             }
-            Collections.sort(unapprovedFiles);
-            return unapprovedFiles;
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        } catch (ParserConfigurationException | SAXException ex) {
-            throw new GradleException(ex.getMessage(), ex);
+        } catch (ReflectiveOperationException | RuntimeException ex) {
+            throw new GradleException("Unable to register script media types as text documents with Apache Rat", ex);
         }
     }
 
-    private List<Element> toElementList(NodeList nodes) {
-        List<Element> elements = new ArrayList<>(nodes.getLength());
-        for (int idx = 0; idx < nodes.getLength(); idx++) {
-            elements.add((Element) nodes.item(idx));
+    private static ReportConfiguration configure(RatWorkSpec spec) {
+        ReportConfiguration config = new ReportConfiguration();
+        config.setFrom(defaults(spec));
+        registerSubstringMatchers(config, spec.getSubstringMatchers().get());
+        approveOnly(config, spec.getApprovedLicenses().get());
+        config.addSource(new FilesReportable(
+                spec.getBaseDir().getAsFile().get(),
+                new ArrayList<>(spec.getReportedFiles().getFiles())));
+        return config;
+    }
+
+    private static void approveOnly(ReportConfiguration config, List<String> approvedLicenses) {
+        if (approvedLicenses.isEmpty()) {
+            return;
         }
-        return elements;
+        Set<String> approvedCategories = new TreeSet<>();
+        for (String approvedLicense : approvedLicenses) {
+            config.addApprovedLicenseCategory(approvedLicense);
+            approvedCategories.add(ILicenseFamily.makeCategory(approvedLicense));
+        }
+        Set<String> categoriesToRemove = new TreeSet<>(config.getLicenseCategories(LicenseFilter.APPROVED));
+        categoriesToRemove.removeAll(approvedCategories);
+        config.removeApprovedLicenseCategories(categoriesToRemove);
+    }
+
+    private static void registerSubstringMatchers(ReportConfiguration config, List<SubstringMatcher> matchers) {
+        for (int index = 0; index < matchers.size(); index++) {
+            SubstringMatcher matcher = matchers.get(index);
+            String category = matcher.getLicenseFamilyCategory();
+            String name = matcher.getLicenseFamilyName();
+            if (!hasFamilyWithCategory(config, category)) {
+                config.addFamily(ILicenseFamily.builder()
+                        .setLicenseFamilyCategory(category)
+                        .setLicenseFamilyName(name)
+                        .build());
+            }
+            config.addLicense(ILicense.builder()
+                    .setFamily(category)
+                    .setName(name)
+                    .setId(category.trim() + "-" + (index + 1))
+                    .setMatcher(headerMatcherFor(matcher.getSubstrings())));
+        }
+    }
+
+    private static boolean hasFamilyWithCategory(ReportConfiguration config, String category) {
+        String paddedCategory = ILicenseFamily.makeCategory(category);
+        for (ILicenseFamily family : config.getLicenseFamilies(LicenseFilter.ALL)) {
+            if (family.getFamilyCategory().equals(paddedCategory)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static IHeaderMatcher headerMatcherFor(List<String> substrings) {
+        if (substrings.size() == 1) {
+            return new SimpleTextMatcher(substrings.get(0));
+        }
+        List<IHeaderMatcher> textMatchers = new ArrayList<>();
+        for (String substring : substrings) {
+            textMatchers.add(new SimpleTextMatcher(substring));
+        }
+        return new OrMatcher(textMatchers, null);
+    }
+
+    private static Defaults defaults(RatWorkSpec spec) {
+        Defaults.Builder builder = Defaults.builder();
+        if (!spec.getAddDefaultMatchers().get()) {
+            builder.noDefault();
+        }
+        return builder.build();
     }
 }

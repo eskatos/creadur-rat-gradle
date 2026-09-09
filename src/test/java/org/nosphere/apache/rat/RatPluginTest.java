@@ -23,10 +23,14 @@ import static org.gradle.testkit.runner.TaskOutcome.FROM_CACHE;
 import static org.gradle.testkit.runner.TaskOutcome.SUCCESS;
 import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
@@ -147,12 +151,26 @@ public class RatPluginTest extends AbstractPluginTest {
                 "tasks.rat {",
                 "    verbose.set(true)",
                 "    addDefaultMatchers.set(false)",
+                "    substringMatcher(\"MYFOO\", \"Foo License\", \"" + Fixtures.FOO_MARKER + "\")",
                 "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
                 "}"));
         withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
 
-        assertRatTask(buildAndFail("check", "-s"), FAILED);
+        BuildResult result = buildAndFail("check", "-s");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Apache Rat audit failure - 1 unapproved license");
         assertGeneratedAllReports();
+    }
+
+    @Test
+    public void disablingDefaultMatchersWithoutCustomMatchersIsAConfigurationError() {
+        withRatBuildScript("    addDefaultMatchers.set(false)", "    failOnError.set(false)");
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "addDefaultMatchers is false and no substringMatcher is declared");
+        assertOutputDoesNotContain(result, "See file:");
     }
 
     @Test
@@ -172,6 +190,145 @@ public class RatPluginTest extends AbstractPluginTest {
 
         assertRatTask(buildAndFail("check", "-s"), FAILED);
         assertGeneratedAllReports();
+    }
+
+    @Test
+    public void passesWhenTheFileSetHasNoStandardDocuments() {
+        withRatBuildScript();
+        withBinaryFile("image.png", Fixtures.PNG);
+
+        assertRatTask(build("check"), SUCCESS);
+        assertGeneratedAllReports();
+    }
+
+    @Test
+    public void passesWhenTheFileSetIsEmpty() {
+        withRatBuildScript();
+
+        assertRatTask(build("check"), SUCCESS);
+        assertGeneratedAllReports();
+    }
+
+    @Test
+    public void customFamilyIsNotApprovedByDefault() {
+        withRatBuildScript("    substringMatcher(\"MYFOO\", \"Foo License\", \"" + Fixtures.FOO_MARKER + "\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Apache Rat audit failure - 1 unapproved license");
+    }
+
+    @Test
+    public void mitFileIsApprovedByDefault() {
+        withRatBuildScript();
+        withFile("mit-licensed.txt", Fixtures.MIT_LICENSE_TEXT);
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        assertRatTask(build("check"), SUCCESS);
+        assertGeneratedAllReports();
+    }
+
+    @Test
+    public void verboseListsUnapprovedFiles() {
+        withRatBuildScript("    verbose.set(true)");
+        withFile("no-license-file.txt", "Nothing here.");
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Files with unapproved licenses");
+        assertOutputContains(result, "no-license-file.txt");
+    }
+
+    @Test
+    public void xmlReportIsXml() {
+        withRatBuildScript();
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        assertRatTask(build("check"), SUCCESS);
+        String xml = withoutXmlDeclaration(readReport("rat-report.xml"));
+        assertTrue(xml.startsWith("<rat-report"), () -> "Expected an XML report, got: " + xml);
+    }
+
+    private static String withoutXmlDeclaration(String document) {
+        String trimmed = document.trim();
+        if (trimmed.startsWith("<?xml")) {
+            return trimmed.substring(trimmed.indexOf("?>") + 2).trim();
+        }
+        return trimmed;
+    }
+
+    @Test
+    public void plainReportNamesUnapprovedFile() {
+        withRatBuildScript();
+        withFile("no-license-file.txt", "Nothing here.");
+
+        assertRatTask(buildAndFail("check"), FAILED);
+        assertTrue(readReport("rat-report.txt").contains("no-license-file.txt"));
+    }
+
+    @Test
+    public void customMatcherOnKnownFamilyIsUsed() {
+        withRatBuildScript("    substringMatcher(\"MIT\", \"The MIT License\", \"" + Fixtures.FOO_MARKER + "\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+
+        assertRatTask(build("check"), SUCCESS);
+        assertGeneratedAllReports();
+    }
+
+    @Test
+    public void twoMatchersOnTheSameCustomFamilyBothMatch() {
+        withRatBuildScript(
+                "    substringMatcher(\"MYFOO\", \"Foo License\", \"" + Fixtures.FOO_MARKER + "\")",
+                "    substringMatcher(\"MYFOO\", \"Foo License\", \"" + Fixtures.BAR_MARKER + "\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+        withFile("bar-marker.txt", Fixtures.BAR_MARKER);
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Apache Rat audit failure - 2 unapproved licenses");
+        assertFalse(readReport("rat-report.xml").contains("?????"), "Expected every file to match a license");
+    }
+
+    @Test
+    public void scriptFilesAreAudited() {
+        withRatBuildScript("    verbose.set(true)");
+        withFile("script.sh", "echo unlicensed\n");
+        withFile("script.bat", "@echo unlicensed\r\n");
+        withFile("script.js", "console.log('unlicensed');\n");
+        withFile("script.rs", "fn main() {}\n");
+        withFile("run", "#!/bin/sh\necho unlicensed\n");
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Apache Rat audit failure - 5 unapproved licenses");
+    }
+
+    @Test
+    public void jsonStaysBinary() {
+        withRatBuildScript();
+        withFile("data.json", "{}\n");
+
+        assertRatTask(build("check"), SUCCESS);
+        assertGeneratedAllReports();
+    }
+
+    @Test
+    public void bundlesRat017() {
+        withRatBuildScript();
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        assertRatTask(build("check"), SUCCESS);
+        assertEquals(
+                "<version product=\"Apache Creadur RAT::Core\" vendor=\"Apache Software Foundation\""
+                        + " version=\"0.17\"/>",
+                versionElementOf(readReport("rat-report.xml")));
+    }
+
+    private static String versionElementOf(String xmlReport) {
+        int start = xmlReport.indexOf("<version");
+        int end = xmlReport.indexOf("/>", start);
+        return start < 0 || end < 0 ? "(no version element)" : xmlReport.substring(start, end + 2);
     }
 
     @Test
@@ -247,6 +404,19 @@ public class RatPluginTest extends AbstractPluginTest {
         withFile("no-license-file.txt", "Nothing here.");
 
         assertRatTask(build("check"), SUCCESS);
+    }
+
+    private void withRatBuildScript(String... taskConfiguration) {
+        List<String> lines = new ArrayList<>(Arrays.asList(
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']"));
+        lines.addAll(Arrays.asList(taskConfiguration));
+        lines.add("}");
+        withBuildScript(String.join("\n", lines));
     }
 
     private void assertRatTask(BuildResult result, TaskOutcome outcome) {
