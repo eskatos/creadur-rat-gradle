@@ -193,7 +193,7 @@ tasks.check { dependsOn(tasks.honkerCheck) }
 tasks.rat {
     verbose = true
     exclude(
-        "README.md", "CODE_OF_CONDUCT.md",
+        "README.md", "CHANGELOG.md", "CODE_OF_CONDUCT.md",
         ".gradletasknamecache", "gradle/wrapper/**", "gradle/gradle-daemon-jvm.properties",
         "gradlew*", "build/**", // Gradle
         ".nb-gradle/**", "*.iml", "*.ipr", "*.iws", "*.idea/**", ".editorconfig", // IDEs

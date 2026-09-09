@@ -280,6 +280,19 @@ public class RatPluginTest extends AbstractPluginTest {
     }
 
     @Test
+    public void xslStylesheetsAreAudited() {
+        withRatBuildScript("    verbose.set(true)");
+        withFile(
+                "transform.xsl",
+                "<?xml version=\"1.0\"?>\n<xsl:stylesheet version=\"1.0\""
+                        + " xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\"><xsl:template match=\"/\"/></xsl:stylesheet>\n");
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Apache Rat audit failure - 1 unapproved license");
+    }
+
+    @Test
     public void jsonStaysBinary() {
         withRatBuildScript();
         withFile("data.json", "{}\n");

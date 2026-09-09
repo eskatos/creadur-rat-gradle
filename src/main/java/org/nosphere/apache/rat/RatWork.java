@@ -56,15 +56,19 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
 
     private static final Logger LOGGER = Logging.getLogger(RatWork.class);
 
-    private static final List<String> SCRIPT_MEDIA_TYPES = Arrays.asList(
-            "application/x-sh", "application/x-bat", "application/javascript", "application/rls-services+xml");
+    private static final List<String> TEXT_MEDIA_TYPES = Arrays.asList(
+            "application/x-sh",
+            "application/x-bat",
+            "application/javascript",
+            "application/rls-services+xml",
+            "application/xslt+xml");
 
     @Override
     public void execute() {
         RatWorkSpec spec = getParameters();
         boolean verbose = spec.getVerbose().get();
         DefaultLog.setInstance(new RatLogBridge(LOGGER, verbose));
-        restoreScriptDocumentTypes();
+        restoreTextDocumentTypes();
         File reportDir = spec.getReportDirectory().getAsFile().get();
         reportDir.mkdirs();
         RatConfigurationBuilder builder = new RatConfigurationBuilder(spec);
@@ -140,16 +144,16 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
     }
 
     @SuppressWarnings("unchecked")
-    private static void restoreScriptDocumentTypes() {
+    private static void restoreTextDocumentTypes() {
         try {
             Field documentTypeMap = TikaProcessor.class.getDeclaredField("DOCUMENT_TYPE_MAP");
             documentTypeMap.setAccessible(true);
             Map<String, Document.Type> typesByMediaType = (Map<String, Document.Type>) documentTypeMap.get(null);
-            for (String mediaType : SCRIPT_MEDIA_TYPES) {
+            for (String mediaType : TEXT_MEDIA_TYPES) {
                 typesByMediaType.put(mediaType, Document.Type.STANDARD);
             }
         } catch (ReflectiveOperationException | RuntimeException ex) {
-            throw new GradleException("Unable to register script media types as text documents with Apache Rat", ex);
+            throw new GradleException("Unable to register text media types as standard documents with Apache Rat", ex);
         }
     }
 }
