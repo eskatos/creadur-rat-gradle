@@ -1,5 +1,4 @@
-<xsl:transform xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="2.0">
-
+<?xml version="1.0" encoding="UTF-8"?>
 <!--***********************************************************
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,185 +19,276 @@
  * under the License.
  *
  ***********************************************************-->
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
 
-<!-- This style sheet converts any rat-report.xml file.  -->
+  <xsl:output method="html" encoding="UTF-8" indent="yes" doctype-system="about:legacy-compat"/>
 
-<xsl:template match="/">
+  <xsl:variable name="unapproved" select="number(/rat-report/statistics/statistic[@name='Unapproved']/@count)"/>
 
-  <html>
-    <head>
-     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-     <style type="text/css">
-    &lt;!--
-body {margin-top: 0px;font-size: 0.8em;background-color: #F9F7ED;}
+  <xsl:template match="/rat-report">
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <title>Apache Rat report</title>
+        <style>
+          :root {
+            color-scheme: light dark;
+            --bg: #f6f7f9;
+            --surface: #ffffff;
+            --text: #1c1e21;
+            --muted: #5f6672;
+            --line: #d9dde3;
+            --accent: #2f5fd0;
+            --pass-bg: #e3f5e8;
+            --pass-fg: #1c6b34;
+            --fail-bg: #fbe4e4;
+            --fail-fg: #9c2323;
+            --row: #f3f5f8;
+          }
+          @media (prefers-color-scheme: dark) {
+            :root {
+              --bg: #14161a;
+              --surface: #1d2026;
+              --text: #e7e9ec;
+              --muted: #9aa3b0;
+              --line: #333842;
+              --accent: #7da2ff;
+              --pass-bg: #163a24;
+              --pass-fg: #7fd79a;
+              --fail-bg: #4a1d1d;
+              --fail-fg: #ff9b9b;
+              --row: #22262d;
+            }
+          }
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            padding: 2rem 1.5rem 4rem;
+            background: var(--bg);
+            color: var(--text);
+            font: 15px/1.5 -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+          }
+          main { max-width: 72rem; margin: 0 auto; }
+          h1 { font-size: 1.75rem; margin: 0 0 0.25rem; }
+          h2 { font-size: 1.2rem; margin: 2.5rem 0 0.75rem; }
+          .meta { color: var(--muted); margin: 0; }
+          .status {
+            margin: 1.5rem 0;
+            padding: 1rem 1.25rem;
+            border-radius: 0.5rem;
+            font-size: 1.15rem;
+            font-weight: 600;
+          }
+          .status.pass { background: var(--pass-bg); color: var(--pass-fg); }
+          .status.fail { background: var(--fail-bg); color: var(--fail-fg); }
+          .status p { margin: 0; }
+          .counters {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+            gap: 0.75rem;
+          }
+          .card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+          }
+          .card .value { display: block; font-size: 1.6rem; font-weight: 600; line-height: 1.2; }
+          .card .label { color: var(--muted); font-size: 0.85rem; }
+          .card.fail { border-color: var(--fail-fg); }
+          .card.fail .value { color: var(--fail-fg); }
+          ul.files { margin: 0; padding-left: 1.25rem; }
+          ul.files li { margin: 0.2rem 0; }
+          code, .path {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            font-size: 0.9em;
+          }
+          .scroll {
+            overflow-x: auto;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 0.5rem;
+          }
+          table { border-collapse: collapse; width: 100%; }
+          th, td {
+            text-align: left;
+            padding: 0.45rem 0.75rem;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+            white-space: nowrap;
+          }
+          th { color: var(--muted); font-weight: 600; font-size: 0.85rem; }
+          tbody tr:nth-child(even) { background: var(--row); }
+          td.path { white-space: normal; word-break: break-all; min-width: 18rem; }
+          td.num { text-align: right; }
+          tr.unapproved td:first-child { border-left: 3px solid var(--fail-fg); }
+          .approved { color: var(--pass-fg); }
+          .unapproved-license { color: var(--fail-fg); font-weight: 600; }
+          .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 1rem; }
+          .muted { color: var(--muted); }
+        </style>
+      </head>
+      <body>
+        <main>
+          <h1>Apache Rat report</h1>
+          <p class="meta">
+            <xsl:text>Generated </xsl:text>
+            <xsl:value-of select="@timestamp"/>
+            <xsl:text> by </xsl:text>
+            <xsl:value-of select="version/@product"/>
+            <xsl:text> </xsl:text>
+            <xsl:value-of select="version/@version"/>
+          </p>
 
-h1 {color:red;}
-h2 {color:blue;}
-h3 {color:green;}
-h4 {color:orange;}
+          <xsl:call-template name="status"/>
+          <xsl:call-template name="counters"/>
+          <xsl:if test="$unapproved &gt; 0">
+            <xsl:call-template name="unapproved-files"/>
+          </xsl:if>
+          <xsl:call-template name="licenses"/>
+          <xsl:call-template name="files"/>
+        </main>
+      </body>
+    </html>
+  </xsl:template>
 
-/* Table Design */
+  <xsl:template name="status">
+    <section>
+      <xsl:attribute name="class">
+        <xsl:choose>
+          <xsl:when test="$unapproved = 0">status pass</xsl:when>
+          <xsl:otherwise>status fail</xsl:otherwise>
+        </xsl:choose>
+      </xsl:attribute>
+      <p id="audit-status">
+        <xsl:choose>
+          <xsl:when test="$unapproved = 0">No unapproved licenses</xsl:when>
+          <xsl:when test="$unapproved = 1">1 unapproved license</xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="$unapproved"/>
+            <xsl:text> unapproved licenses</xsl:text>
+          </xsl:otherwise>
+        </xsl:choose>
+      </p>
+    </section>
+  </xsl:template>
 
-table,tr,td {text-align:center;font-weight:bold;border:1px solid #000;}
-caption {color:blue;text-align:left;}
-.notes, .binaries, .archives, .standards {width:25%;}
-.notes {background:#D7EDEE;}
-.binaries {background:#D0F2F4;}
-.archives {background:#ABE7E9;}
-.standards {background:#A0F0F4;}
-.licenced, .generated {width:50%;}
-.licenced {background:#C6EBDD;}
-.generated {background:#ABE9D2;}
-.java_note {background:#D6EBC6;}
-.generated_note {background:#C9E7A9;}
-.unknown {width:100%;background:#E92020;}
-.unknown-zero {color:#00CC00;}
-.center{text-align:center;margin:0 auto;}
---&gt;
-     </style>
-    </head>
-    <body>
-      <xsl:apply-templates/>
-      <xsl:call-template name="generated"/>
-    </body>
-  </html>
-</xsl:template>
+  <xsl:template name="counters">
+    <section class="counters">
+      <xsl:for-each select="statistics/statistic">
+        <div>
+          <xsl:attribute name="class">
+            <xsl:choose>
+              <xsl:when test="@name = 'Unapproved' and $unapproved &gt; 0">card fail</xsl:when>
+              <xsl:otherwise>card</xsl:otherwise>
+            </xsl:choose>
+          </xsl:attribute>
+          <xsl:attribute name="title"><xsl:value-of select="@description"/></xsl:attribute>
+          <span class="value">
+            <xsl:if test="@name = 'Unapproved'">
+              <xsl:attribute name="id">unapproved-count</xsl:attribute>
+            </xsl:if>
+            <xsl:value-of select="@count"/>
+          </span>
+          <span class="label"><xsl:value-of select="@name"/></span>
+        </div>
+      </xsl:for-each>
+    </section>
+  </xsl:template>
 
-<xsl:template match="rat-report">
+  <xsl:template name="unapproved-files">
+    <section id="unapproved-files">
+      <h2>Unapproved licenses</h2>
+      <ul class="files">
+        <xsl:for-each select="resource[license/@approval = 'false']">
+          <li>
+            <span class="path"><xsl:value-of select="@name"/></span>
+            <xsl:for-each select="license[@approval = 'false']">
+              <xsl:text> </xsl:text>
+              <span class="muted">(<xsl:value-of select="@name"/>)</span>
+            </xsl:for-each>
+          </li>
+        </xsl:for-each>
+      </ul>
+    </section>
+  </xsl:template>
 
-  <h1>Rat Report</h1>
-<div class="center">
-<table id="rat-reports summary" cellspacing="0" summary="A snapshot summary of this rat report">
-<caption>
-Table 1: A snapshot summary of this rat report.
-</caption>
-  <tr>
-    <td colspan="1" class="notes">Notes: <xsl:value-of select="count(descendant::type[attribute::name=&quot;notice&quot;])"/></td>
-    <td colspan="1" class="binaries">Binaries: <xsl:value-of select="count(descendant::type[attribute::name=&quot;binary&quot;])"/></td>
-    <td colspan="1" class="archives">Archives: <xsl:value-of select="count(descendant::type[attribute::name=&quot;archive&quot;])"/></td>
-    <td colspan="1" class="standards">Standards: <xsl:value-of select="count(descendant::type[attribute::name=&quot;standard&quot;])"/></td>
-  </tr>
-  <tr>
-    <td colspan="2" class="licenced">Apache Licensed: <xsl:value-of select="count(descendant::header-type[attribute::name=&quot;AL   &quot;])"/></td>
-    <td colspan="2" class="generated">Generated Documents: <xsl:value-of select="count(descendant::header-type[attribute::name=&quot;GEN  &quot;])"/></td>
-  </tr>
-  <tr>
-    <td colspan="2" class="java_note">Note: JavaDocs are generated and so license header is optional</td>
-    <td colspan="2" class="generated_note">Note: Generated files do not require license headers</td>
-  </tr>
-  <tr>
-<xsl:choose>
-  <xsl:when test="count(descendant::header-type[attribute::name=&quot;?????&quot;]) &gt; 0">
-    <td colspan="4" class="unknown"><xsl:value-of select="count(descendant::header-type[attribute::name=&quot;?????&quot;])"/> Unknown Licenses - or files without a license.</td>
-  </xsl:when>
-  <xsl:otherwise>
-    <td colspan="4" class="unknown-zero"><xsl:value-of select="count(descendant::header-type[attribute::name=&quot;?????&quot;])"/> Unknown Licenses - or files without a license.</td>
-  </xsl:otherwise>
-</xsl:choose>
-  </tr>
-</table>
-</div>
-<hr/>
-  <h3>Unapproved Licenses:</h3>
+  <xsl:template name="licenses">
+    <section>
+      <h2>Licenses</h2>
+      <div class="pair">
+        <div class="scroll">
+          <table>
+            <thead><tr><th>License</th><th>Files</th></tr></thead>
+            <tbody>
+              <xsl:for-each select="statistics/licenseName">
+                <tr>
+                  <td><xsl:value-of select="@name"/></td>
+                  <td class="num"><xsl:value-of select="@count"/></td>
+                </tr>
+              </xsl:for-each>
+            </tbody>
+          </table>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead><tr><th>Category</th><th>Files</th></tr></thead>
+            <tbody>
+              <xsl:for-each select="statistics/licenseCategory">
+                <tr>
+                  <td><code><xsl:value-of select="@name"/></code></td>
+                  <td class="num"><xsl:value-of select="@count"/></td>
+                </tr>
+              </xsl:for-each>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </xsl:template>
 
-  <xsl:for-each select="descendant::resource[license-approval/@name=&quot;false&quot;]">
-  <xsl:text>  </xsl:text>
-  <xsl:value-of select="@name"/><br/>
-  <xsl:text>
-</xsl:text>
-</xsl:for-each>
-<hr/>
+  <xsl:template name="files">
+    <section>
+      <h2>Files</h2>
+      <div class="scroll">
+        <table>
+          <thead>
+            <tr><th>File</th><th>Type</th><th>Media type</th><th>Encoding</th><th>License</th><th>Approval</th></tr>
+          </thead>
+          <tbody>
+            <xsl:for-each select="resource">
+              <tr>
+                <xsl:if test="license/@approval = 'false'">
+                  <xsl:attribute name="class">unapproved</xsl:attribute>
+                </xsl:if>
+                <td class="path"><xsl:value-of select="@name"/></td>
+                <td><xsl:value-of select="@type"/></td>
+                <td><xsl:value-of select="@mediaType"/></td>
+                <td><xsl:value-of select="@encoding"/></td>
+                <td>
+                  <xsl:for-each select="license">
+                    <xsl:if test="position() &gt; 1"><br/></xsl:if>
+                    <xsl:value-of select="@name"/>
+                    <xsl:text> </xsl:text>
+                    <code><xsl:value-of select="normalize-space(@family)"/></code>
+                  </xsl:for-each>
+                </td>
+                <td>
+                  <xsl:for-each select="license">
+                    <xsl:if test="position() &gt; 1"><br/></xsl:if>
+                    <xsl:choose>
+                      <xsl:when test="@approval = 'true'"><span class="approved">approved</span></xsl:when>
+                      <xsl:otherwise><span class="unapproved-license">unapproved</span></xsl:otherwise>
+                    </xsl:choose>
+                  </xsl:for-each>
+                </td>
+              </tr>
+            </xsl:for-each>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </xsl:template>
 
-<h3>Archives:</h3>
-
-<xsl:for-each select="descendant::resource[type/@name=&quot;archive&quot;]">
- + <xsl:value-of select="@name"/>
- <br/>
- </xsl:for-each>
- <hr/>
-
- <p>
-   Files with Apache License headers will be marked AL<br/>
-   Binary files (which do not require AL headers) will be marked B<br/>
-  Compressed archives will be marked A<br/>
-  Notices, licenses etc will be marked N<br/>
-  </p>
-
- <xsl:for-each select="descendant::resource">
-  <xsl:choose>
-   <xsl:when test="license-approval/@name=&quot;false&quot;">!</xsl:when>
-   <xsl:otherwise><xsl:text> </xsl:text></xsl:otherwise>
- </xsl:choose>
- <xsl:choose>
-   <xsl:when test="type/@name=&quot;notice&quot;">N   </xsl:when>
-   <xsl:when test="type/@name=&quot;archive&quot;">A   </xsl:when>
-   <xsl:when test="type/@name=&quot;binary&quot;">B   </xsl:when>
-   <xsl:when test="type/@name=&quot;standard&quot;"><xsl:value-of select="header-type/@name"/></xsl:when>
-   <xsl:otherwise>!!!!!</xsl:otherwise>
- </xsl:choose>
- <xsl:text>      </xsl:text>
- <xsl:value-of select="@name"/><br/>
- <xsl:text>
- </xsl:text>
- </xsl:for-each>
- <hr/>
-
- <h3>Printing headers for files without AL header...</h3>
-
- <xsl:for-each select="descendant::resource[header-type/@name=&quot;?????&quot;]">
-
-   <h4><xsl:value-of select="@name"/></h4>
-  <xsl:value-of select="header-sample"/>
-  <hr/>
-</xsl:for-each>
-<br/>
-
- <!-- <xsl:apply-templates select="resource"/>
-    <xsl:apply-templates select="header-sample"/>
-    <xsl:apply-templates select="header-type"/>
-    <xsl:apply-templates select="license-family"/>
-    <xsl:apply-templates select="license-approval"/>
-    <xsl:apply-templates select="type"/> -->
-
-</xsl:template>
-
-<xsl:template match="resource">
-  <div>
-    <h3>Resource: <xsl:value-of select="@name"/></h3>
-      <xsl:apply-templates/>
-    </div>
-</xsl:template>
-
-<xsl:template match="header-sample">
-  <xsl:if test="normalize-space(.) != ''">
-  <h4>First few lines of non-compliant file</h4>
-    <p>
-      <xsl:value-of select="."/>
-    </p>
-    </xsl:if>
-    <h4>Other Info:</h4>
-</xsl:template>
-
-<xsl:template match="header-type">
-  Header Type: <xsl:value-of select="@name"/>
-  <br/>
-</xsl:template>
-
-<xsl:template match="license-family">
-  License Family: <xsl:value-of select="@name"/>
-  <br/>
-</xsl:template>
-
-<xsl:template match="license-approval">
-  License Approval: <xsl:value-of select="@name"/>
-  <br/>
-</xsl:template>
-
-<xsl:template match="type">
-  Type: <xsl:value-of select="@name"/>
-  <br/>
-</xsl:template>
-
-<xsl:template name="generated">
-</xsl:template>
-</xsl:transform>
+</xsl:stylesheet>

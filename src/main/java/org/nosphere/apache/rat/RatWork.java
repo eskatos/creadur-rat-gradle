@@ -28,6 +28,7 @@ import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.xml.transform.Transformer;
@@ -104,34 +105,33 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
     }
 
     private static void report(Reporter reporter, File reportDir) {
-        writeReport(reporter, StyleSheets.XML.getStyleSheet(), new File(reportDir, "rat-report.xml"));
-        writeReport(reporter, StyleSheets.PLAIN.getStyleSheet(), new File(reportDir, "rat-report.txt"));
-        writeHtmlReport(reporter, new File(reportDir, "index.html"));
+        Map<String, IOSupplier<InputStream>> stylesheetsByReport = new LinkedHashMap<>();
+        stylesheetsByReport.put("rat-report.xml", StyleSheets.XML.getStyleSheet());
+        stylesheetsByReport.put("rat-report.txt", StyleSheets.PLAIN.getStyleSheet());
+        stylesheetsByReport.put("index.html", RatWork::htmlStyleSheet);
+        for (Map.Entry<String, IOSupplier<InputStream>> report : stylesheetsByReport.entrySet()) {
+            try (OutputStream target = new FileOutputStream(new File(reportDir, report.getKey()))) {
+                transform(reporter, report.getValue(), target);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }
     }
 
-    private static void writeReport(Reporter reporter, IOSupplier<InputStream> stylesheet, File target) {
-        try {
-            reporter.output(stylesheet, () -> new FileOutputStream(target));
-        } catch (RatException ex) {
-            throw new GradleException(ex.getMessage(), ex);
-        }
+    private static InputStream htmlStyleSheet() {
+        return RatWork.class.getResourceAsStream("apache-rat-output-to-html.xsl");
     }
 
     private static String unapprovedFilesListing(Reporter reporter) {
         ByteArrayOutputStream listing = new ByteArrayOutputStream();
-        try {
-            reporter.output(StyleSheets.UNAPPROVED_LICENSES.getStyleSheet(), () -> listing);
-        } catch (RatException ex) {
-            throw new GradleException(ex.getMessage(), ex);
-        }
+        transform(reporter, StyleSheets.UNAPPROVED_LICENSES.getStyleSheet(), listing);
         return new String(listing.toByteArray(), StandardCharsets.UTF_8);
     }
 
-    private static void writeHtmlReport(Reporter reporter, File target) {
-        try (InputStream stylesheet = RatWork.class.getResourceAsStream("apache-rat-output-to-html.xsl");
-                OutputStream output = new FileOutputStream(target)) {
-            Transformer transformer = TransformerFactory.newInstance().newTransformer(new StreamSource(stylesheet));
-            transformer.transform(new DOMSource(reporter.getDocument()), new StreamResult(output));
+    private static void transform(Reporter reporter, IOSupplier<InputStream> stylesheet, OutputStream target) {
+        try (InputStream xsl = stylesheet.get()) {
+            Transformer transformer = TransformerFactory.newInstance().newTransformer(new StreamSource(xsl));
+            transformer.transform(new DOMSource(reporter.getDocument()), new StreamResult(target));
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         } catch (TransformerException ex) {

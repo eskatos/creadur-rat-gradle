@@ -89,6 +89,19 @@ public abstract class AbstractPluginTest {
         withFile("build.gradle", text);
     }
 
+    protected void withRatBuildScript(String... taskConfiguration) {
+        List<String> lines = new ArrayList<>(Arrays.asList(
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']"));
+        lines.addAll(Arrays.asList(taskConfiguration));
+        lines.add("}");
+        withBuildScript(String.join("\n", lines));
+    }
+
     protected String readReport(String name) {
         try {
             return new String(

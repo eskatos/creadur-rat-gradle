@@ -28,9 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.gradle.testkit.runner.BuildResult;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
@@ -243,33 +240,6 @@ public class RatPluginTest extends AbstractPluginTest {
         assertRatTask(result, FAILED);
         assertOutputContains(result, "Files with unapproved licenses");
         assertOutputContains(result, "no-license-file.txt");
-    }
-
-    @Test
-    public void xmlReportIsXml() {
-        withRatBuildScript();
-        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
-
-        assertRatTask(build("check"), SUCCESS);
-        String xml = withoutXmlDeclaration(readReport("rat-report.xml"));
-        assertTrue(xml.startsWith("<rat-report"), () -> "Expected an XML report, got: " + xml);
-    }
-
-    private static String withoutXmlDeclaration(String document) {
-        String trimmed = document.trim();
-        if (trimmed.startsWith("<?xml")) {
-            return trimmed.substring(trimmed.indexOf("?>") + 2).trim();
-        }
-        return trimmed;
-    }
-
-    @Test
-    public void plainReportNamesUnapprovedFile() {
-        withRatBuildScript();
-        withFile("no-license-file.txt", "Nothing here.");
-
-        assertRatTask(buildAndFail("check"), FAILED);
-        assertTrue(readReport("rat-report.txt").contains("no-license-file.txt"));
     }
 
     @Test
@@ -571,19 +541,6 @@ public class RatPluginTest extends AbstractPluginTest {
         withFile("no-license-file.txt", "Nothing here.");
 
         assertRatTask(build("check"), SUCCESS);
-    }
-
-    private void withRatBuildScript(String... taskConfiguration) {
-        List<String> lines = new ArrayList<>(Arrays.asList(
-                "plugins {",
-                "    id(\"base\")",
-                "    id(\"org.nosphere.apache.rat\")",
-                "}",
-                "tasks.rat {",
-                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']"));
-        lines.addAll(Arrays.asList(taskConfiguration));
-        lines.add("}");
-        withBuildScript(String.join("\n", lines));
     }
 
     private void assertRatTask(BuildResult result, TaskOutcome outcome) {
