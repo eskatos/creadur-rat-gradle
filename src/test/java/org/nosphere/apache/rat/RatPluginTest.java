@@ -462,6 +462,43 @@ public class RatPluginTest extends AbstractPluginTest {
     }
 
     @Test
+    public void cleanRunPrintsNothingFromRat() {
+        withRatBuildScript("    verbose.set(false)");
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        BuildResult result = build("check");
+        assertRatTask(result, SUCCESS);
+        assertOutputDoesNotContain(result, "Excluding");
+        assertOutputDoesNotContain(result, "INFO:");
+    }
+
+    @Test
+    public void verbosePrintsLicenseFamilyTable() {
+        withRatBuildScript(
+                "    verbose.set(true)",
+                "    substringMatcher(\"MYFOO\", \"Foo License\", \"" + Fixtures.FOO_MARKER + "\")");
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        BuildResult result = build("check");
+        assertRatTask(result, SUCCESS);
+        assertOutputContains(result, "License families:");
+        assertOutputContains(result, "[MYFOO] Foo License - not approved");
+        assertOutputContains(result, "[MIT  ] The MIT License - approved");
+        assertOutputContains(result, "Excluding");
+    }
+
+    @Test
+    public void auditFailureMessageRespectsQuiet() {
+        withRatBuildScript("    verbose.set(true)", "    failOnError.set(false)");
+        withFile("no-license-file.txt", "Nothing here.");
+
+        BuildResult result = build("check", "-q");
+        assertRatTask(result, SUCCESS);
+        assertOutputDoesNotContain(result, "Apache Rat audit failure");
+        assertOutputDoesNotContain(result, "Files with unapproved licenses");
+    }
+
+    @Test
     public void stylesheetPropertyIsGone() {
         withBuildScript(String.join(
                 "\n",

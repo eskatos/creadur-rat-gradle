@@ -44,22 +44,33 @@ import org.apache.rat.api.Document;
 import org.apache.rat.api.RatException;
 import org.apache.rat.commandline.StyleSheets;
 import org.apache.rat.report.claim.ClaimStatistic;
+import org.apache.rat.utils.DefaultLog;
 import org.gradle.api.GradleException;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 import org.gradle.internal.logging.ConsoleRenderer;
 import org.gradle.workers.WorkAction;
 
 public abstract class RatWork implements WorkAction<RatWorkSpec> {
+
+    private static final Logger LOGGER = Logging.getLogger(RatWork.class);
 
     private static final List<String> SCRIPT_MEDIA_TYPES = Arrays.asList(
             "application/x-sh", "application/x-bat", "application/javascript", "application/rls-services+xml");
 
     @Override
     public void execute() {
-        restoreScriptDocumentTypes();
         RatWorkSpec spec = getParameters();
+        boolean verbose = spec.getVerbose().get();
+        DefaultLog.setInstance(new RatLogBridge(LOGGER, verbose));
+        restoreScriptDocumentTypes();
         File reportDir = spec.getReportDirectory().getAsFile().get();
         reportDir.mkdirs();
-        ReportConfiguration config = new RatConfigurationBuilder(spec).build();
+        RatConfigurationBuilder builder = new RatConfigurationBuilder(spec);
+        ReportConfiguration config = builder.build();
+        if (verbose) {
+            LOGGER.lifecycle("License families:\n" + String.join("\n", builder.licenseFamilyTable()));
+        }
         Reporter reporter = new Reporter(config);
         ClaimStatistic stats = runAudit(reporter);
         report(reporter, reportDir);
@@ -73,7 +84,7 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
             return;
         }
         if (spec.getVerbose().get()) {
-            System.err.println(unapprovedFilesListing(reporter));
+            LOGGER.lifecycle(unapprovedFilesListing(reporter));
         }
         String message = "Apache Rat audit failure - " + unapproved + " unapproved license"
                 + (unapproved > 1 ? "s" : "") + "\n"
@@ -81,7 +92,7 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
         if (spec.getFailOnError().get()) {
             throw new GradleException(message);
         }
-        System.err.println(message);
+        LOGGER.warn(message);
     }
 
     private static ClaimStatistic runAudit(Reporter reporter) {

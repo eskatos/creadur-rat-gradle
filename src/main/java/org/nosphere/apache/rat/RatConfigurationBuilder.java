@@ -53,6 +53,16 @@ final class RatConfigurationBuilder {
         return config;
     }
 
+    List<String> licenseFamilyTable() {
+        Set<String> approved = config.getLicenseCategories(LicenseFilter.APPROVED);
+        List<String> rows = new ArrayList<>();
+        for (ILicenseFamily family : config.getLicenseFamilies(LicenseFilter.ALL)) {
+            String approval = approved.contains(family.getFamilyCategory()) ? "approved" : "not approved";
+            rows.add("  [" + family.getFamilyCategory() + "] " + family.getFamilyName() + " - " + approval);
+        }
+        return rows;
+    }
+
     static GradleException configurationError(String detail) {
         return new GradleException(
                 "Apache Rat configuration error: " + detail + " failOnError does not apply to configuration errors.");
