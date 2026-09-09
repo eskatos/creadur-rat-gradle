@@ -405,6 +405,63 @@ public class RatPluginTest extends AbstractPluginTest {
     }
 
     @Test
+    public void longSubstringMatcherCategoryFailsAtConfigurationTime() {
+        withRatBuildScript(
+                "    substringMatcher(\"BSD-3-Clause\", \"My BSD License\", \"" + Fixtures.FOO_MARKER + "\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+
+        BuildResult result = buildAndFail("check");
+        assertRatTaskDidNotRun(result);
+        assertOutputContains(result, "BSD-3-Clause");
+        assertOutputContains(result, "5 characters");
+    }
+
+    @Test
+    public void substringMatcherCollidingWithKnownFamilyFails() {
+        withRatBuildScript(
+                "    failOnError.set(false)",
+                "    substringMatcher(\"MIT\", \"My Own License\", \"" + Fixtures.FOO_MARKER + "\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Apache Rat configuration error");
+        assertOutputContains(result, "MIT");
+        assertOutputContains(result, "My Own License");
+        assertOutputContains(result, "The MIT License");
+        assertOutputContains(result, "failOnError does not apply to configuration errors");
+        assertOutputDoesNotContain(result, "See file:");
+    }
+
+    @Test
+    public void twoSubstringMatchersSharingACategoryFail() {
+        withRatBuildScript(
+                "    substringMatcher(\"MYFOO\", \"Foo License\", \"" + Fixtures.FOO_MARKER + "\")",
+                "    substringMatcher(\"MYFOO\", \"Bar License\", \"" + Fixtures.BAR_MARKER + "\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+        withFile("bar-marker.txt", Fixtures.BAR_MARKER);
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Apache Rat configuration error");
+        assertOutputContains(result, "MYFOO");
+        assertOutputContains(result, "Foo License");
+        assertOutputContains(result, "Bar License");
+    }
+
+    @Test
+    public void collidingCategoryIsLegalWhenDefaultsAreDisabled() {
+        withRatBuildScript(
+                "    addDefaultMatchers.set(false)",
+                "    substringMatcher(\"MIT\", \"My Own License\", \"" + Fixtures.FOO_MARKER + "\")",
+                "    approvedLicenses.add(\"My Own License\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+
+        assertRatTask(build("check"), SUCCESS);
+        assertGeneratedAllReports();
+    }
+
+    @Test
     public void stylesheetPropertyIsGone() {
         withBuildScript(String.join(
                 "\n",

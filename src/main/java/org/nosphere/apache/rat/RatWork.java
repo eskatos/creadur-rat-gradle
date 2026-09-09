@@ -27,12 +27,9 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -40,19 +37,12 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import org.apache.commons.io.function.IOSupplier;
-import org.apache.rat.Defaults;
 import org.apache.rat.ReportConfiguration;
 import org.apache.rat.Reporter;
-import org.apache.rat.analysis.IHeaderMatcher;
 import org.apache.rat.analysis.TikaProcessor;
-import org.apache.rat.analysis.matchers.OrMatcher;
-import org.apache.rat.analysis.matchers.SimpleTextMatcher;
 import org.apache.rat.api.Document;
 import org.apache.rat.api.RatException;
 import org.apache.rat.commandline.StyleSheets;
-import org.apache.rat.license.ILicense;
-import org.apache.rat.license.ILicenseFamily;
-import org.apache.rat.license.LicenseSetFactory.LicenseFilter;
 import org.apache.rat.report.claim.ClaimStatistic;
 import org.gradle.api.GradleException;
 import org.gradle.internal.logging.ConsoleRenderer;
@@ -69,7 +59,7 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
         RatWorkSpec spec = getParameters();
         File reportDir = spec.getReportDirectory().getAsFile().get();
         reportDir.mkdirs();
-        ReportConfiguration config = configure(spec);
+        ReportConfiguration config = new RatConfigurationBuilder(spec).build();
         Reporter reporter = new Reporter(config);
         ClaimStatistic stats = runAudit(reporter);
         report(reporter, reportDir);
@@ -150,107 +140,5 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
         } catch (ReflectiveOperationException | RuntimeException ex) {
             throw new GradleException("Unable to register script media types as text documents with Apache Rat", ex);
         }
-    }
-
-    private static ReportConfiguration configure(RatWorkSpec spec) {
-        ReportConfiguration config = new ReportConfiguration();
-        config.setFrom(defaults(spec));
-        List<SubstringMatcher> matchers = spec.getSubstringMatchers().get();
-        registerSubstringMatchers(config, matchers);
-        approveOnly(config, spec.getApprovedLicenses().get(), vocabulary(matchers));
-        config.addSource(new FilesReportable(
-                spec.getBaseDir().getAsFile().get(),
-                new ArrayList<>(spec.getReportedFiles().getFiles())));
-        return config;
-    }
-
-    private static String resolveApprovedLicense(LicenseFamilies knownFamilies, String value) {
-        try {
-            return knownFamilies.resolve(value);
-        } catch (IllegalArgumentException ex) {
-            throw configurationError("approvedLicenses: " + ex.getMessage());
-        }
-    }
-
-    private static GradleException configurationError(String detail) {
-        return new GradleException(
-                "Apache Rat configuration error: " + detail + " failOnError does not apply to configuration errors.");
-    }
-
-    private static LicenseFamilies vocabulary(List<SubstringMatcher> matchers) {
-        ReportConfiguration defaults = new ReportConfiguration();
-        defaults.setFrom(Defaults.builder().build());
-        Set<LicenseFamily> families = new TreeSet<>();
-        for (ILicenseFamily family : defaults.getLicenseFamilies(LicenseFilter.ALL)) {
-            families.add(LicenseFamily.of(family.getFamilyCategory(), family.getFamilyName()));
-        }
-        for (SubstringMatcher matcher : matchers) {
-            families.add(LicenseFamily.of(matcher.getLicenseFamilyCategory(), matcher.getLicenseFamilyName()));
-        }
-        return new LicenseFamilies(families);
-    }
-
-    private static void approveOnly(
-            ReportConfiguration config, List<String> approvedLicenses, LicenseFamilies knownFamilies) {
-        if (approvedLicenses.isEmpty()) {
-            return;
-        }
-        Set<String> approvedCategories = new TreeSet<>();
-        for (String approvedLicense : approvedLicenses) {
-            String category = resolveApprovedLicense(knownFamilies, approvedLicense);
-            config.addApprovedLicenseCategory(category);
-            approvedCategories.add(category);
-        }
-        Set<String> categoriesToRemove = new TreeSet<>(config.getLicenseCategories(LicenseFilter.APPROVED));
-        categoriesToRemove.removeAll(approvedCategories);
-        config.removeApprovedLicenseCategories(categoriesToRemove);
-    }
-
-    private static void registerSubstringMatchers(ReportConfiguration config, List<SubstringMatcher> matchers) {
-        for (int index = 0; index < matchers.size(); index++) {
-            SubstringMatcher matcher = matchers.get(index);
-            String category = matcher.getLicenseFamilyCategory();
-            String name = matcher.getLicenseFamilyName();
-            if (!hasFamilyWithCategory(config, category)) {
-                config.addFamily(ILicenseFamily.builder()
-                        .setLicenseFamilyCategory(category)
-                        .setLicenseFamilyName(name)
-                        .build());
-            }
-            config.addLicense(ILicense.builder()
-                    .setFamily(category)
-                    .setName(name)
-                    .setId(category.trim() + "-" + (index + 1))
-                    .setMatcher(headerMatcherFor(matcher.getSubstrings())));
-        }
-    }
-
-    private static boolean hasFamilyWithCategory(ReportConfiguration config, String category) {
-        String paddedCategory = ILicenseFamily.makeCategory(category);
-        for (ILicenseFamily family : config.getLicenseFamilies(LicenseFilter.ALL)) {
-            if (family.getFamilyCategory().equals(paddedCategory)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private static IHeaderMatcher headerMatcherFor(List<String> substrings) {
-        if (substrings.size() == 1) {
-            return new SimpleTextMatcher(substrings.get(0));
-        }
-        List<IHeaderMatcher> textMatchers = new ArrayList<>();
-        for (String substring : substrings) {
-            textMatchers.add(new SimpleTextMatcher(substring));
-        }
-        return new OrMatcher(textMatchers, null);
-    }
-
-    private static Defaults defaults(RatWorkSpec spec) {
-        Defaults.Builder builder = Defaults.builder();
-        if (!spec.getAddDefaultMatchers().get()) {
-            builder.noDefault();
-        }
-        return builder.build();
     }
 }

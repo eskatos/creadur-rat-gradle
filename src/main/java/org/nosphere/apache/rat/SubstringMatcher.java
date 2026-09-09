@@ -34,9 +34,22 @@ public class SubstringMatcher implements Serializable {
     private final List<String> substrings;
 
     public SubstringMatcher(String licenseFamilyCategory, String licenseFamilyName, List<String> substrings) {
-        this.licenseFamilyCategory = licenseFamilyCategory;
+        this.licenseFamilyCategory = validCategory(licenseFamilyCategory);
         this.licenseFamilyName = licenseFamilyName;
         this.substrings = Collections.unmodifiableList(new ArrayList<>(substrings));
+    }
+
+    private static String validCategory(String category) {
+        if (category.trim().isEmpty()) {
+            throw new IllegalArgumentException("substringMatcher license family category must not be blank");
+        }
+        if (category.length() > LicenseFamily.CATEGORY_LENGTH) {
+            throw new IllegalArgumentException("substringMatcher license family category '" + category
+                    + "' is too long: Apache Rat categories are at most " + LicenseFamily.CATEGORY_LENGTH
+                    + " characters, and a longer one would be truncated to '"
+                    + category.substring(0, LicenseFamily.CATEGORY_LENGTH) + "'");
+        }
+        return category;
     }
 
     @Input
