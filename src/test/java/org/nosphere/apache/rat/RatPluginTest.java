@@ -183,13 +183,18 @@ public class RatPluginTest extends AbstractPluginTest {
                 "}",
                 "tasks.rat {",
                 "    verbose.set(true)",
-                "    approvedLicenses.add(\"MIT\")",
+                "    approvedLicenses.add(\"The MIT License\")",
                 "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
                 "}"));
+        withFile("mit-licensed.txt", Fixtures.MIT_LICENSE_TEXT);
         withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
 
-        assertRatTask(buildAndFail("check", "-s"), FAILED);
+        BuildResult result = buildAndFail("check", "-s");
+        assertRatTask(result, FAILED);
         assertGeneratedAllReports();
+        assertOutputContains(result, "Apache Rat audit failure - 1 unapproved license");
+        assertOutputContains(result, "default-licensed.txt");
+        assertOutputDoesNotContain(result, "mit-licensed.txt");
     }
 
     @Test
@@ -329,6 +334,74 @@ public class RatPluginTest extends AbstractPluginTest {
         int start = xmlReport.indexOf("<version");
         int end = xmlReport.indexOf("/>", start);
         return start < 0 || end < 0 ? "(no version element)" : xmlReport.substring(start, end + 2);
+    }
+
+    @Test
+    public void customFamilyCanBeApprovedByName() {
+        withRatBuildScript(
+                "    substringMatcher(\"MYFOO\", \"Foo License\", \"" + Fixtures.FOO_MARKER + "\")",
+                "    approvedLicenses.add(\"Foo License\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+
+        assertRatTask(build("check"), SUCCESS);
+        assertGeneratedAllReports();
+    }
+
+    @Test
+    public void approvedLicensesAcceptsCategory() {
+        withRatBuildScript("    verbose.set(true)", "    approvedLicenses.add(\"MIT\")");
+        withFile("mit-licensed.txt", Fixtures.MIT_LICENSE_TEXT);
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Apache Rat audit failure - 1 unapproved license");
+        assertOutputContains(result, "default-licensed.txt");
+        assertOutputDoesNotContain(result, "mit-licensed.txt");
+    }
+
+    @Test
+    public void unknownApprovedLicenseFailsEvenWithFailOnErrorFalse() {
+        withRatBuildScript("    failOnError.set(false)", "    approvedLicenses.add(\"Apache License Version 2.0\")");
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "approvedLicenses");
+        assertOutputContains(result, "Apache License Version 2.0");
+        assertOutputContains(result, "Apache License");
+        assertOutputContains(result, "The MIT License");
+        assertOutputContains(result, "failOnError does not apply to configuration errors");
+        assertOutputDoesNotContain(result, "See file:");
+    }
+
+    @Test
+    public void ambiguousApprovedLicenseNameFails() {
+        withRatBuildScript(
+                "    substringMatcher(\"MYMIT\", \"The MIT License\", \"" + Fixtures.FOO_MARKER + "\")",
+                "    approvedLicenses.add(\"The MIT License\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Apache Rat configuration error");
+        assertOutputContains(result, "'The MIT License' matches several categories: MIT, MYMIT");
+        assertOutputContains(result, "Use the category instead");
+        assertOutputDoesNotContain(result, "See file:");
+    }
+
+    @Test
+    public void approvedLicensesResolvesAgainstDefaultsWhenMatchersAreDisabled() {
+        withRatBuildScript(
+                "    addDefaultMatchers.set(false)",
+                "    substringMatcher(\"MYFOO\", \"Foo License\", \"" + Fixtures.FOO_MARKER + "\")",
+                "    approvedLicenses.add(\"MIT\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+
+        BuildResult result = buildAndFail("check");
+        assertRatTask(result, FAILED);
+        assertOutputContains(result, "Apache Rat audit failure - 1 unapproved license");
+        assertOutputDoesNotContain(result, "Apache Rat configuration error");
     }
 
     @Test

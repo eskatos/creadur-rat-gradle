@@ -155,22 +155,51 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
     private static ReportConfiguration configure(RatWorkSpec spec) {
         ReportConfiguration config = new ReportConfiguration();
         config.setFrom(defaults(spec));
-        registerSubstringMatchers(config, spec.getSubstringMatchers().get());
-        approveOnly(config, spec.getApprovedLicenses().get());
+        List<SubstringMatcher> matchers = spec.getSubstringMatchers().get();
+        registerSubstringMatchers(config, matchers);
+        approveOnly(config, spec.getApprovedLicenses().get(), vocabulary(matchers));
         config.addSource(new FilesReportable(
                 spec.getBaseDir().getAsFile().get(),
                 new ArrayList<>(spec.getReportedFiles().getFiles())));
         return config;
     }
 
-    private static void approveOnly(ReportConfiguration config, List<String> approvedLicenses) {
+    private static String resolveApprovedLicense(LicenseFamilies knownFamilies, String value) {
+        try {
+            return knownFamilies.resolve(value);
+        } catch (IllegalArgumentException ex) {
+            throw configurationError("approvedLicenses: " + ex.getMessage());
+        }
+    }
+
+    private static GradleException configurationError(String detail) {
+        return new GradleException(
+                "Apache Rat configuration error: " + detail + " failOnError does not apply to configuration errors.");
+    }
+
+    private static LicenseFamilies vocabulary(List<SubstringMatcher> matchers) {
+        ReportConfiguration defaults = new ReportConfiguration();
+        defaults.setFrom(Defaults.builder().build());
+        Set<LicenseFamily> families = new TreeSet<>();
+        for (ILicenseFamily family : defaults.getLicenseFamilies(LicenseFilter.ALL)) {
+            families.add(LicenseFamily.of(family.getFamilyCategory(), family.getFamilyName()));
+        }
+        for (SubstringMatcher matcher : matchers) {
+            families.add(LicenseFamily.of(matcher.getLicenseFamilyCategory(), matcher.getLicenseFamilyName()));
+        }
+        return new LicenseFamilies(families);
+    }
+
+    private static void approveOnly(
+            ReportConfiguration config, List<String> approvedLicenses, LicenseFamilies knownFamilies) {
         if (approvedLicenses.isEmpty()) {
             return;
         }
         Set<String> approvedCategories = new TreeSet<>();
         for (String approvedLicense : approvedLicenses) {
-            config.addApprovedLicenseCategory(approvedLicense);
-            approvedCategories.add(ILicenseFamily.makeCategory(approvedLicense));
+            String category = resolveApprovedLicense(knownFamilies, approvedLicense);
+            config.addApprovedLicenseCategory(category);
+            approvedCategories.add(category);
         }
         Set<String> categoriesToRemove = new TreeSet<>(config.getLicenseCategories(LicenseFilter.APPROVED));
         categoriesToRemove.removeAll(approvedCategories);
