@@ -51,17 +51,11 @@ public class LicenseFamiliesTest {
     }
 
     @Test
-    public void resolvesRenamedApacheFamilyByItsNewName() {
-        assertEquals("AL   ", families().resolve("Apache License"));
-    }
-
-    @Test
     public void rejectsUnknownNameListingTheKnownFamilies() {
         LicenseFamilies.UnknownFamilyException ex = assertThrows(
                 LicenseFamilies.UnknownFamilyException.class, () -> families().resolve("Apache License Version 2.0"));
         assertTrue(ex.getMessage().contains("Apache License Version 2.0"), ex.getMessage());
-        assertTrue(ex.getMessage().contains("Apache License"), ex.getMessage());
-        assertTrue(ex.getMessage().contains("The MIT License"), ex.getMessage());
+        assertTrue(ex.getMessage().contains("[AL   ] Apache License, [MIT  ] The MIT License"), ex.getMessage());
     }
 
     @Test

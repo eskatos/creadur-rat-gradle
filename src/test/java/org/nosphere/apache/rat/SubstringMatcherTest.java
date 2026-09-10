@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Arrays;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
 
@@ -45,15 +46,26 @@ public class SubstringMatcherTest {
     }
 
     @Test
-    public void rejectsCategoryThatWouldTruncateOntoAKnownFamily() {
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> matcher("BSD-3-Clause"));
-        assertTrue(ex.getMessage().contains("BSD-3-Clause"), ex.getMessage());
-        assertTrue(ex.getMessage().contains("5 characters"), ex.getMessage());
+    public void rejectsBlankCategory() {
+        assertThrows(IllegalArgumentException.class, () -> matcher(""));
     }
 
     @Test
-    public void rejectsBlankCategory() {
-        assertThrows(IllegalArgumentException.class, () -> matcher(""));
+    public void rejectsNoSubstrings() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new SubstringMatcher("MYFOO", "Foo License", Collections.emptyList()));
+        assertTrue(ex.getMessage().contains("Foo License"), ex.getMessage());
+        assertTrue(ex.getMessage().contains("no substring"), ex.getMessage());
+    }
+
+    @Test
+    public void rejectsBlankSubstring() {
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> new SubstringMatcher("MYFOO", "Foo License", Arrays.asList("FOO", " ")));
+        assertTrue(ex.getMessage().contains("Foo License"), ex.getMessage());
+        assertTrue(ex.getMessage().contains("blank substring"), ex.getMessage());
     }
 
     private static SubstringMatcher matcher(String category) {

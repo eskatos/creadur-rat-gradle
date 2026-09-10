@@ -20,13 +20,12 @@ package org.nosphere.apache.rat;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,6 +55,10 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
 
     private static final Logger LOGGER = Logging.getLogger(RatWork.class);
 
+    // Rat 0.17 calls these media types binary and skips their headers. 0.15 checked them.
+    // Tika custom-mimetypes cannot fix it, glob conflict. Here we patch Rat's private map.
+    // List stays explicit: deriving from Tika text/plain children would drag in JSON.
+    // Must fail loud if the field is gone. Delete when TikaProcessor.fromMediaType is fixed upstream.
     private static final List<String> TEXT_MEDIA_TYPES = Arrays.asList(
             "application/x-sh",
             "application/x-bat",
@@ -63,26 +66,27 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
             "application/rls-services+xml",
             "application/xslt+xml");
 
+    private final TransformerFactory transformerFactory = TransformerFactory.newInstance();
+
     @Override
     public void execute() {
         RatWorkSpec spec = getParameters();
         boolean verbose = spec.getVerbose().get();
         DefaultLog.setInstance(new RatLogBridge(LOGGER, verbose));
         restoreTextDocumentTypes();
-        File reportDir = spec.getReportDirectory().getAsFile().get();
+        File reportDir = spec.getReportDir().getAsFile().get();
         reportDir.mkdirs();
-        RatConfigurationBuilder builder = new RatConfigurationBuilder(spec);
-        ReportConfiguration config = builder.build();
+        ReportConfiguration config = new RatConfigurationBuilder(spec).build();
         if (verbose) {
-            LOGGER.lifecycle("License families:\n" + String.join("\n", builder.licenseFamilyTable()));
+            LOGGER.lifecycle(RatConfigurationBuilder.licenseFamilyTable(config));
         }
         Reporter reporter = new Reporter(config);
         ClaimStatistic stats = runAudit(reporter);
-        report(reporter, reportDir);
-        verdict(spec, config, stats, reporter, reportDir);
+        writeReports(reporter, reportDir);
+        failOrWarnOnUnapprovedLicenses(spec, config, stats, reporter, reportDir);
     }
 
-    private static void verdict(
+    private void failOrWarnOnUnapprovedLicenses(
             RatWorkSpec spec, ReportConfiguration config, ClaimStatistic stats, Reporter reporter, File reportDir) {
         int unapproved = stats.getCounter(ClaimStatistic.Counter.UNAPPROVED);
         if (config.getClaimValidator().isValid(ClaimStatistic.Counter.UNAPPROVED, unapproved)) {
@@ -108,16 +112,17 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
         }
     }
 
-    private static void report(Reporter reporter, File reportDir) {
+    private void writeReports(Reporter reporter, File reportDir) {
         Map<String, IOSupplier<InputStream>> stylesheetsByReport = new LinkedHashMap<>();
         stylesheetsByReport.put("rat-report.xml", StyleSheets.XML.getStyleSheet());
         stylesheetsByReport.put("rat-report.txt", StyleSheets.PLAIN.getStyleSheet());
         stylesheetsByReport.put("index.html", RatWork::htmlStyleSheet);
         for (Map.Entry<String, IOSupplier<InputStream>> report : stylesheetsByReport.entrySet()) {
-            try (OutputStream target = new FileOutputStream(new File(reportDir, report.getKey()))) {
+            File reportFile = new File(reportDir, report.getKey());
+            try (OutputStream target = Files.newOutputStream(reportFile.toPath())) {
                 transform(reporter, report.getValue(), target);
             } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
+                throw new GradleException("Unable to write Apache Rat report " + reportFile, ex);
             }
         }
     }
@@ -126,20 +131,18 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
         return RatWork.class.getResourceAsStream("apache-rat-output-to-html.xsl");
     }
 
-    private static String unapprovedFilesListing(Reporter reporter) {
+    private String unapprovedFilesListing(Reporter reporter) {
         ByteArrayOutputStream listing = new ByteArrayOutputStream();
         transform(reporter, StyleSheets.UNAPPROVED_LICENSES.getStyleSheet(), listing);
         return new String(listing.toByteArray(), StandardCharsets.UTF_8);
     }
 
-    private static void transform(Reporter reporter, IOSupplier<InputStream> stylesheet, OutputStream target) {
+    private void transform(Reporter reporter, IOSupplier<InputStream> stylesheet, OutputStream target) {
         try (InputStream xsl = stylesheet.get()) {
-            Transformer transformer = TransformerFactory.newInstance().newTransformer(new StreamSource(xsl));
+            Transformer transformer = transformerFactory.newTransformer(new StreamSource(xsl));
             transformer.transform(new DOMSource(reporter.getDocument()), new StreamResult(target));
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        } catch (TransformerException ex) {
-            throw new GradleException(ex.getMessage(), ex);
+        } catch (IOException | TransformerException ex) {
+            throw new GradleException("Unable to transform the Apache Rat report", ex);
         }
     }
 
@@ -153,7 +156,7 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
                 typesByMediaType.put(mediaType, Document.Type.STANDARD);
             }
         } catch (ReflectiveOperationException | RuntimeException ex) {
-            throw new GradleException("Unable to register text media types as standard documents with Apache Rat", ex);
+            throw new GradleException("Unable to restore text media types as standard documents in Apache Rat", ex);
         }
     }
 }

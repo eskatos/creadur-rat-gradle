@@ -18,7 +18,9 @@
  */
 package org.nosphere.apache.rat;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -55,7 +57,16 @@ final class LicenseFamilies {
         if (category != null) {
             return category;
         }
-        throw new UnknownFamilyException("Unknown license family '" + value + "'. Known license families: " + families);
+        throw new UnknownFamilyException(
+                "Unknown license family '" + value + "'. Known license families: " + knownFamiliesListing());
+    }
+
+    private String knownFamiliesListing() {
+        List<String> listing = new ArrayList<>();
+        for (LicenseFamily family : families) {
+            listing.add(family.toString());
+        }
+        return String.join(", ", listing);
     }
 
     private Set<String> categoriesNamed(String name) {

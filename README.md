@@ -146,7 +146,7 @@ The task writes three files to `reportDir`:
 gradle rat
 ```
 
-If the project has a `check` task, then the `rat` task is automatically registered as dependent on the former.
+If the project has a `check` task, it is automatically made dependent on the `rat` task.
 
 When a Rat audit fails, a clickable URL of the HTML report will be printed out:
 

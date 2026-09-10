@@ -19,38 +19,79 @@
 package org.nosphere.apache.rat;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
+import java.util.SortedSet;
+import org.apache.rat.api.Document;
 import org.apache.rat.api.RatException;
 import org.apache.rat.document.DocumentName;
 import org.apache.rat.document.DocumentNameMatcher;
-import org.apache.rat.document.FileDocument;
 import org.apache.rat.report.IReportable;
 import org.apache.rat.report.RatReport;
+import org.gradle.api.GradleException;
 
 class FilesReportable implements IReportable {
 
-    private final File baseDir;
+    private final Path baseDir;
 
     private final DocumentName baseName;
 
     private final List<File> files;
 
     FilesReportable(File baseDir, List<File> files) {
-        this.baseDir = baseDir;
+        this.baseDir = baseDir.toPath();
         this.baseName = DocumentName.builder(baseDir).build();
         this.files = files;
     }
 
+    // Rat's walker catches RatException, logs it, and skips all subsequent files silently.
+    // Rethrow unchecked to prevent that.
     @Override
-    public void run(RatReport report) throws RatException {
+    public void run(RatReport report) {
         for (File file : files) {
-            DocumentName name = DocumentName.builder(file).setBaseName(baseDir).build();
-            report.report(new FileDocument(name, file, DocumentNameMatcher.MATCHES_ALL));
+            try {
+                report.report(new ReportedFile(documentNameOf(file), file));
+            } catch (RatException ex) {
+                throw new GradleException("Apache Rat failed to audit " + file, ex);
+            }
         }
     }
 
     @Override
     public DocumentName getName() {
         return baseName;
+    }
+
+    private DocumentName documentNameOf(File file) {
+        return baseName.resolve(baseDir.relativize(file.toPath()).toString());
+    }
+
+    private static final class ReportedFile extends Document {
+
+        private final File file;
+
+        ReportedFile(DocumentName name, File file) {
+            super(name, DocumentNameMatcher.MATCHES_ALL);
+            this.file = file;
+        }
+
+        @Override
+        public InputStream inputStream() throws IOException {
+            return Files.newInputStream(file.toPath());
+        }
+
+        @Override
+        public boolean isDirectory() {
+            return false;
+        }
+
+        @Override
+        public SortedSet<Document> listChildren() {
+            return Collections.emptySortedSet();
+        }
     }
 }

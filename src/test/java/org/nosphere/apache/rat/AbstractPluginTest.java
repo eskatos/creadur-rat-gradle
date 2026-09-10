@@ -18,6 +18,7 @@
  */
 package org.nosphere.apache.rat;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.gradle.api.JavaVersion;
 import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.gradle.util.GradleVersion;
@@ -70,11 +72,7 @@ public abstract class AbstractPluginTest {
     }
 
     protected void withFile(String path, String text) {
-        try {
-            Files.write(new File(getRootDir(), path).toPath(), text.getBytes(StandardCharsets.UTF_8));
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
+        withBinaryFile(path, text.getBytes(StandardCharsets.UTF_8));
     }
 
     protected void withBinaryFile(String path, byte[] bytes) {
@@ -102,11 +100,13 @@ public abstract class AbstractPluginTest {
         withBuildScript(String.join("\n", lines));
     }
 
+    protected File reportFile(String name) {
+        return new File(getRootDir(), "build/reports/rat/" + name);
+    }
+
     protected String readReport(String name) {
         try {
-            return new String(
-                    Files.readAllBytes(new File(getRootDir(), "build/reports/rat/" + name).toPath()),
-                    StandardCharsets.UTF_8);
+            return new String(Files.readAllBytes(reportFile(name).toPath()), StandardCharsets.UTF_8);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
@@ -121,7 +121,12 @@ public abstract class AbstractPluginTest {
     }
 
     protected TaskOutcome outcomeOf(BuildResult result, String path) {
-        return result.task(path) == null ? null : result.task(path).getOutcome();
+        BuildTask task = result.task(path);
+        return task == null ? null : task.getOutcome();
+    }
+
+    protected void assertRatTask(BuildResult result, TaskOutcome outcome) {
+        assertEquals(outcome, outcomeOf(result, ":rat"));
     }
 
     protected void assertRatTaskDidNotRun(BuildResult result) {

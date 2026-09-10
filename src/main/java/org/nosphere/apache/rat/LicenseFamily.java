@@ -33,8 +33,9 @@ final class LicenseFamily implements Comparable<LicenseFamily> {
     }
 
     static String paddedCategory(String category) {
-        if (category.length() >= CATEGORY_LENGTH) {
-            return category.substring(0, CATEGORY_LENGTH);
+        if (category.length() > CATEGORY_LENGTH) {
+            throw new IllegalArgumentException(
+                    "License family category '" + category + "' is longer than " + CATEGORY_LENGTH + " characters");
         }
         StringBuilder padded = new StringBuilder(category);
         while (padded.length() < CATEGORY_LENGTH) {

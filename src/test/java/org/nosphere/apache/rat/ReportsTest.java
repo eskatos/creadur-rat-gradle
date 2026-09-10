@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -35,13 +34,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-public class HtmlReportTest extends AbstractPluginTest {
+public class ReportsTest extends AbstractPluginTest {
 
     @Test
     public void htmlNamesUnapprovedFile() {
         withFailingAuditTree();
 
-        assertEquals(FAILED, outcomeOf(buildAndFail("check"), ":rat"));
+        assertRatTask(buildAndFail("check"), FAILED);
         String unapprovedFiles = elementWithId(htmlReport(), "unapproved-files");
         assertNotNull(unapprovedFiles, "Expected an element with id unapproved-files");
         assertTrue(unapprovedFiles.contains("no-license-file.txt"), unapprovedFiles);
@@ -51,7 +50,7 @@ public class HtmlReportTest extends AbstractPluginTest {
     public void htmlCountsMatchXml() throws Exception {
         withFailingAuditTree();
 
-        assertEquals(FAILED, outcomeOf(buildAndFail("check"), ":rat"));
+        assertRatTask(buildAndFail("check"), FAILED);
         String unapprovedCount = statisticCount("Unapproved");
         assertEquals("1", unapprovedCount);
         String rendered = elementWithId(htmlReport(), "unapproved-count");
@@ -63,7 +62,7 @@ public class HtmlReportTest extends AbstractPluginTest {
     public void cleanAuditRendersAsPass() {
         withCleanAuditTree();
 
-        assertEquals(SUCCESS, outcomeOf(build("check"), ":rat"));
+        assertRatTask(build("check"), SUCCESS);
         String html = htmlReport();
         String status = elementWithId(html, "audit-status");
         assertNotNull(status, "Expected an element with id audit-status");
@@ -75,7 +74,7 @@ public class HtmlReportTest extends AbstractPluginTest {
     public void htmlHasNoNetworkReferences() {
         withFailingAuditTree();
 
-        assertEquals(FAILED, outcomeOf(buildAndFail("check"), ":rat"));
+        assertRatTask(buildAndFail("check"), FAILED);
         String html = htmlReport();
         for (String reference : new String[] {"http://", "https://", "<link rel=\"stylesheet\"", "<script src="}) {
             assertFalse(html.contains(reference), "index.html must not reference the network: " + reference);
@@ -86,7 +85,7 @@ public class HtmlReportTest extends AbstractPluginTest {
     public void xmlReportIsXml() {
         withCleanAuditTree();
 
-        assertEquals(SUCCESS, outcomeOf(build("check"), ":rat"));
+        assertRatTask(build("check"), SUCCESS);
         String xml = withoutXmlDeclaration(readReport("rat-report.xml"));
         assertTrue(xml.startsWith("<rat-report"), () -> "Expected an XML report, got: " + xml);
     }
@@ -95,7 +94,7 @@ public class HtmlReportTest extends AbstractPluginTest {
     public void plainReportNamesUnapprovedFile() {
         withFailingAuditTree();
 
-        assertEquals(FAILED, outcomeOf(buildAndFail("check"), ":rat"));
+        assertRatTask(buildAndFail("check"), FAILED);
         String plain = readReport("rat-report.txt");
         assertFalse(plain.trim().startsWith("<"), "Expected a plain text report, got: " + plain);
         assertTrue(plain.contains("! /no-license-file.txt"), plain);
@@ -110,9 +109,7 @@ public class HtmlReportTest extends AbstractPluginTest {
     }
 
     private String statisticCount(String name) throws Exception {
-        Document xml = DocumentBuilderFactory.newInstance()
-                .newDocumentBuilder()
-                .parse(new File(getRootDir(), "build/reports/rat/rat-report.xml"));
+        Document xml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(reportFile("rat-report.xml"));
         NodeList statistics = xml.getElementsByTagName("statistic");
         for (int i = 0; i < statistics.getLength(); i++) {
             Element statistic = (Element) statistics.item(i);

@@ -36,20 +36,35 @@ public class SubstringMatcher implements Serializable {
     public SubstringMatcher(String licenseFamilyCategory, String licenseFamilyName, List<String> substrings) {
         this.licenseFamilyCategory = validCategory(licenseFamilyCategory);
         this.licenseFamilyName = licenseFamilyName;
-        this.substrings = Collections.unmodifiableList(new ArrayList<>(substrings));
+        this.substrings = Collections.unmodifiableList(new ArrayList<>(validSubstrings(licenseFamilyName, substrings)));
     }
 
     private static String validCategory(String category) {
         if (category.trim().isEmpty()) {
-            throw new IllegalArgumentException("substringMatcher license family category must not be blank");
+            throw new IllegalArgumentException("substringMatcher category must not be blank");
         }
         if (category.length() > LicenseFamily.CATEGORY_LENGTH) {
-            throw new IllegalArgumentException("substringMatcher license family category '" + category
+            throw new IllegalArgumentException("substringMatcher category '" + category
                     + "' is too long: Apache Rat categories are at most " + LicenseFamily.CATEGORY_LENGTH
                     + " characters, and a longer one would be truncated to '"
-                    + category.substring(0, LicenseFamily.CATEGORY_LENGTH) + "'");
+                    + category.substring(0, LicenseFamily.CATEGORY_LENGTH) + "'. Use a category of at most "
+                    + LicenseFamily.CATEGORY_LENGTH + " characters.");
         }
         return category;
+    }
+
+    private static List<String> validSubstrings(String licenseFamilyName, List<String> substrings) {
+        if (substrings.isEmpty()) {
+            throw new IllegalArgumentException("substringMatcher for license family '" + licenseFamilyName
+                    + "' declares no substring. Declare at least one substring to match.");
+        }
+        for (String substring : substrings) {
+            if (substring.trim().isEmpty()) {
+                throw new IllegalArgumentException("substringMatcher for license family '" + licenseFamilyName
+                        + "' declares a blank substring. Every substring must contain text to match.");
+            }
+        }
+        return substrings;
     }
 
     @Input

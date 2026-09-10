@@ -18,13 +18,16 @@
  */
 package org.nosphere.apache.rat;
 
+import static org.nosphere.apache.rat.ConfigurationErrors.configurationError;
+
 import groovy.lang.Closure;
+import java.io.File;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 import javax.inject.Inject;
 import org.gradle.api.DefaultTask;
-import org.gradle.api.GradleException;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.ConfigurableFileTree;
@@ -64,8 +67,6 @@ public class RatTask extends DefaultTask implements PatternFilterable {
 
     private final ObjectFactory objects;
 
-    private final ProjectLayout layout;
-
     private final WorkerExecutor workerExecutor;
 
     private final Property<Boolean> verbose;
@@ -87,7 +88,6 @@ public class RatTask extends DefaultTask implements PatternFilterable {
     @Inject
     public RatTask(ObjectFactory objects, ProjectLayout layout, WorkerExecutor workerExecutor) {
         this.objects = objects;
-        this.layout = layout;
         this.workerExecutor = workerExecutor;
 
         this.verbose = objects.property(Boolean.class);
@@ -159,8 +159,8 @@ public class RatTask extends DefaultTask implements PatternFilterable {
         return approvedLicenses;
     }
 
-    public void approvedLicense(String familyName) {
-        approvedLicenses.add(familyName);
+    public void approvedLicense(String familyNameOrCategory) {
+        approvedLicenses.add(familyNameOrCategory);
     }
 
     @Override
@@ -243,7 +243,17 @@ public class RatTask extends DefaultTask implements PatternFilterable {
         if (!patternSet.isEmpty()) {
             fileTree.include(patternSet.getAsSpec());
         }
+        excludeReportDir(fileTree);
         return fileTree;
+    }
+
+    private void excludeReportDir(ConfigurableFileTree fileTree) {
+        Path input = inputDir.get().getAsFile().toPath().toAbsolutePath().normalize();
+        Path report = reportDir.get().getAsFile().toPath().toAbsolutePath().normalize();
+        if (report.startsWith(input)) {
+            String relative = input.relativize(report).toString().replace(File.separatorChar, '/');
+            fileTree.exclude(relative.isEmpty() ? "**" : relative + "/**");
+        }
     }
 
     @OutputDirectory
@@ -269,18 +279,16 @@ public class RatTask extends DefaultTask implements PatternFilterable {
             parameters.getAddDefaultMatchers().set(addDefaultMatchers);
             parameters.getSubstringMatchers().set(substringMatchers);
             parameters.getApprovedLicenses().set(approvedLicenses);
-            parameters.getBaseDir().set(inputDir);
-            parameters.getReportedFiles().from(inputFiles);
-            parameters.getReportDirectory().set(reportDir);
+            parameters.getInputDir().set(inputDir);
+            parameters.getInputFiles().from(inputFiles);
+            parameters.getReportDir().set(reportDir);
         });
     }
 
     private void requireAtLeastOneLicenseMatcher() {
         if (!addDefaultMatchers.get() && substringMatchers.get().isEmpty()) {
-            throw new GradleException("Apache Rat configuration error: addDefaultMatchers is false and no"
-                    + " substringMatcher is declared, so no license can be recognized."
-                    + " Declare a substringMatcher or set addDefaultMatchers to true."
-                    + " failOnError does not apply to configuration errors.");
+            throw configurationError("addDefaultMatchers is false and no substringMatcher is declared, so no"
+                    + " license can be recognized. Declare a substringMatcher or set addDefaultMatchers to true.");
         }
     }
 }

@@ -18,7 +18,11 @@
  */
 package org.nosphere.apache.rat;
 
+import static org.nosphere.apache.rat.ConfigurationErrors.configurationError;
+
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -30,7 +34,6 @@ import org.apache.rat.analysis.matchers.SimpleTextMatcher;
 import org.apache.rat.license.ILicense;
 import org.apache.rat.license.ILicenseFamily;
 import org.apache.rat.license.LicenseSetFactory.LicenseFilter;
-import org.gradle.api.GradleException;
 
 final class RatConfigurationBuilder {
 
@@ -38,42 +41,46 @@ final class RatConfigurationBuilder {
 
     private final ReportConfiguration config = new ReportConfiguration();
 
+    private Defaults allDefaults;
+
     RatConfigurationBuilder(RatWorkSpec spec) {
         this.spec = spec;
     }
 
     ReportConfiguration build() {
-        config.setFrom(defaults());
+        config.setFrom(
+                spec.getAddDefaultMatchers().get()
+                        ? allDefaults()
+                        : Defaults.builder().noDefault().build());
         List<SubstringMatcher> matchers = spec.getSubstringMatchers().get();
         registerSubstringMatchers(matchers);
-        approveOnly(spec.getApprovedLicenses().get(), vocabulary(matchers));
-        config.addSource(new FilesReportable(
-                spec.getBaseDir().getAsFile().get(),
-                new ArrayList<>(spec.getReportedFiles().getFiles())));
+        approveOnly(spec.getApprovedLicenses().get(), matchers);
+        config.addSource(new FilesReportable(spec.getInputDir().getAsFile().get(), sortedInputFiles()));
         return config;
     }
 
-    List<String> licenseFamilyTable() {
+    static String licenseFamilyTable(ReportConfiguration config) {
         Set<String> approved = config.getLicenseCategories(LicenseFilter.APPROVED);
         List<String> rows = new ArrayList<>();
+        rows.add("License families:");
         for (ILicenseFamily family : config.getLicenseFamilies(LicenseFilter.ALL)) {
             String approval = approved.contains(family.getFamilyCategory()) ? "approved" : "not approved";
-            rows.add("  [" + family.getFamilyCategory() + "] " + family.getFamilyName() + " - " + approval);
+            rows.add("  " + LicenseFamily.of(family.getFamilyCategory(), family.getFamilyName()) + " - " + approval);
         }
-        return rows;
+        return String.join("\n", rows);
     }
 
-    static GradleException configurationError(String detail) {
-        return new GradleException(
-                "Apache Rat configuration error: " + detail + " failOnError does not apply to configuration errors.");
+    private Defaults allDefaults() {
+        if (allDefaults == null) {
+            allDefaults = Defaults.builder().build();
+        }
+        return allDefaults;
     }
 
-    private Defaults defaults() {
-        Defaults.Builder builder = Defaults.builder();
-        if (!spec.getAddDefaultMatchers().get()) {
-            builder.noDefault();
-        }
-        return builder.build();
+    private List<File> sortedInputFiles() {
+        List<File> files = new ArrayList<>(spec.getInputFiles().getFiles());
+        Collections.sort(files);
+        return files;
     }
 
     private void registerSubstringMatchers(List<SubstringMatcher> matchers) {
@@ -81,23 +88,29 @@ final class RatConfigurationBuilder {
             SubstringMatcher matcher = matchers.get(index);
             String category = matcher.getLicenseFamilyCategory();
             String name = matcher.getLicenseFamilyName();
-            ILicenseFamily existing = familyWithCategory(category);
-            if (existing == null) {
-                config.addFamily(ILicenseFamily.builder()
-                        .setLicenseFamilyCategory(category)
-                        .setLicenseFamilyName(name)
-                        .build());
-            } else if (!existing.getFamilyName().equals(name)) {
-                throw configurationError("substringMatcher category '" + category + "' declared for license family '"
-                        + name + "' is already the category of license family '" + existing.getFamilyName()
-                        + "'. Apache Rat would merge the two. Use a category no other family uses, or name the"
-                        + " existing family '" + existing.getFamilyName() + "' to attach the matcher to it.");
-            }
+            declareFamily(category, name);
             config.addLicense(ILicense.builder()
                     .setFamily(category)
                     .setName(name)
-                    .setId(category.trim() + "-" + (index + 1))
+                    // Without an ID, Rat uses the category as id and drops the second license on a family,
+                    // ours included, in favor of its own.
+                    .setId(licenseId(category, index))
                     .setMatcher(headerMatcherFor(matcher.getSubstrings())));
+        }
+    }
+
+    private void declareFamily(String category, String name) {
+        ILicenseFamily existing = familyWithCategory(category);
+        if (existing == null) {
+            config.addFamily(ILicenseFamily.builder()
+                    .setLicenseFamilyCategory(category)
+                    .setLicenseFamilyName(name)
+                    .build());
+        } else if (!existing.getFamilyName().equals(name)) {
+            throw configurationError("substringMatcher category '" + category + "' declared for license family '"
+                    + name + "' is already the category of license family '" + existing.getFamilyName()
+                    + "'. Apache Rat would merge the two. Use a category no other family uses, or name the"
+                    + " existing family '" + existing.getFamilyName() + "' to attach the matcher to it.");
         }
     }
 
@@ -111,6 +124,10 @@ final class RatConfigurationBuilder {
         return null;
     }
 
+    private static String licenseId(String category, int index) {
+        return category.trim() + "-" + (index + 1);
+    }
+
     private static IHeaderMatcher headerMatcherFor(List<String> substrings) {
         if (substrings.size() == 1) {
             return new SimpleTextMatcher(substrings.get(0));
@@ -122,23 +139,12 @@ final class RatConfigurationBuilder {
         return new OrMatcher(textMatchers, null);
     }
 
-    private static LicenseFamilies vocabulary(List<SubstringMatcher> matchers) {
-        ReportConfiguration defaults = new ReportConfiguration();
-        defaults.setFrom(Defaults.builder().build());
-        Set<LicenseFamily> families = new TreeSet<>();
-        for (ILicenseFamily family : defaults.getLicenseFamilies(LicenseFilter.ALL)) {
-            families.add(LicenseFamily.of(family.getFamilyCategory(), family.getFamilyName()));
-        }
-        for (SubstringMatcher matcher : matchers) {
-            families.add(LicenseFamily.of(matcher.getLicenseFamilyCategory(), matcher.getLicenseFamilyName()));
-        }
-        return new LicenseFamilies(families);
-    }
-
-    private void approveOnly(List<String> approvedLicenses, LicenseFamilies knownFamilies) {
+    // Add first, remove after. Any other order ends up with an empty approved set.
+    private void approveOnly(List<String> approvedLicenses, List<SubstringMatcher> matchers) {
         if (approvedLicenses.isEmpty()) {
             return;
         }
+        LicenseFamilies knownFamilies = knownFamilies(matchers);
         Set<String> approvedCategories = new TreeSet<>();
         for (String approvedLicense : approvedLicenses) {
             String category = resolveApprovedLicense(knownFamilies, approvedLicense);
@@ -150,10 +156,25 @@ final class RatConfigurationBuilder {
         config.removeApprovedLicenseCategories(categoriesToRemove);
     }
 
+    // Two family sets on purpose. approvedLicenses resolves against this one: all Rat defaults plus ours,
+    // whatever addDefaultMatchers says, so approvedLicenses = ["MIT"] with defaults off still parses,
+    // as in 0.15. Collision check in familyWithCategory uses the configured set instead.
+    // Do not merge them.
+    private LicenseFamilies knownFamilies(List<SubstringMatcher> matchers) {
+        Set<LicenseFamily> families = new TreeSet<>();
+        for (ILicenseFamily family : allDefaults().getLicenseSetFactory().getLicenseFamilies(LicenseFilter.ALL)) {
+            families.add(LicenseFamily.of(family.getFamilyCategory(), family.getFamilyName()));
+        }
+        for (SubstringMatcher matcher : matchers) {
+            families.add(LicenseFamily.of(matcher.getLicenseFamilyCategory(), matcher.getLicenseFamilyName()));
+        }
+        return new LicenseFamilies(families);
+    }
+
     private static String resolveApprovedLicense(LicenseFamilies knownFamilies, String value) {
         try {
             return knownFamilies.resolve(value);
-        } catch (IllegalArgumentException ex) {
+        } catch (LicenseFamilies.UnknownFamilyException | LicenseFamilies.AmbiguousFamilyException ex) {
             throw configurationError("approvedLicenses: " + ex.getMessage());
         }
     }

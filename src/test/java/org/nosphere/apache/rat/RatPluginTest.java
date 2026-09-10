@@ -29,29 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import org.gradle.testkit.runner.BuildResult;
-import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
 
 public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void successUpToDateAndFromCache() throws IOException {
-        withBuildScript(String.join(
-                "\n",
-                "plugins {",
-                "    id(\"base\")",
-                "    id(\"org.nosphere.apache.rat\")",
-                "}",
-                "tasks.rat {",
-                "    verbose.set(true)",
-                "    excludes = [",
-                "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**',",
-                "    ]",
-                "    exclude(",
-                "        'guh/**',",
-                "        'no-license-file.txt'",
-                "    )",
-                "}"));
+        withRatBuildScript("    verbose.set(true)", "    exclude('guh/**', 'no-license-file.txt')");
         withFile("no-license-file.txt", "Nothing here.");
 
         assertRatTask(build("check"), SUCCESS);
@@ -69,18 +53,7 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void failTheBuildWhenFindingAFileWithUnapprovedOrUnknownLicense() {
-        withBuildScript(String.join(
-                "\n",
-                "plugins {",
-                "    id(\"base\")",
-                "    id(\"org.nosphere.apache.rat\")",
-                "}",
-                "tasks.rat {",
-                "    verbose.set(true)",
-                "    excludes = [",
-                "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'",
-                "    ]",
-                "}"));
+        withRatBuildScript("    verbose.set(true)");
         withFile("no-license-file.txt", "Nothing here.");
 
         BuildResult result = buildAndFail("check");
@@ -93,19 +66,7 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void doNotFailButReportErrorsWhenFailOnErrorIsFalse() {
-        withBuildScript(String.join(
-                "\n",
-                "plugins {",
-                "    id(\"base\")",
-                "    id(\"org.nosphere.apache.rat\")",
-                "}",
-                "tasks.rat {",
-                "    verbose.set(true)",
-                "    failOnError.set(false)",
-                "    excludes = [",
-                "        'build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**'",
-                "    ]",
-                "}"));
+        withRatBuildScript("    verbose.set(true)", "    failOnError.set(false)");
         withFile("no-license-file.txt", "Nothing here.");
 
         BuildResult result = build("check");
@@ -118,18 +79,10 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void canDeclareCustomLicenseMatchers() {
-        withBuildScript(String.join(
-                "\n",
-                "plugins {",
-                "    id(\"base\")",
-                "    id(\"org.nosphere.apache.rat\")",
-                "}",
-                "tasks.rat {",
+        withRatBuildScript(
                 "    verbose.set(true)",
-                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
                 "    substringMatcher(\"MIT\", \"The MIT License\","
-                        + " \"Permission is hereby granted, free of charge, to any person obtaining a copy\")",
-                "}"));
+                        + " \"Permission is hereby granted, free of charge, to any person obtaining a copy\")");
         withFile(
                 "substring-mit.txt", "// Permission is hereby granted, free of charge, to any person obtaining a copy");
 
@@ -139,18 +92,10 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void canDisableDefaultLicenseMatchers() {
-        withBuildScript(String.join(
-                "\n",
-                "plugins {",
-                "    id(\"base\")",
-                "    id(\"org.nosphere.apache.rat\")",
-                "}",
-                "tasks.rat {",
+        withRatBuildScript(
                 "    verbose.set(true)",
                 "    addDefaultMatchers.set(false)",
-                "    substringMatcher(\"MYFOO\", \"Foo License\", \"" + Fixtures.FOO_MARKER + "\")",
-                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
-                "}"));
+                "    substringMatcher(\"MYFOO\", \"Foo License\", \"" + Fixtures.FOO_MARKER + "\")");
         withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
 
         BuildResult result = buildAndFail("check", "-s");
@@ -172,17 +117,7 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void canDeclareWhatLicenseFamiliesAreApproved() {
-        withBuildScript(String.join(
-                "\n",
-                "plugins {",
-                "    id(\"base\")",
-                "    id(\"org.nosphere.apache.rat\")",
-                "}",
-                "tasks.rat {",
-                "    verbose.set(true)",
-                "    approvedLicenses.add(\"The MIT License\")",
-                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']",
-                "}"));
+        withRatBuildScript("    verbose.set(true)", "    approvedLicenses.add(\"The MIT License\")");
         withFile("mit-licensed.txt", Fixtures.MIT_LICENSE_TEXT);
         withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
 
@@ -313,12 +248,6 @@ public class RatPluginTest extends AbstractPluginTest {
                 versionElementOf(readReport("rat-report.xml")));
     }
 
-    private static String versionElementOf(String xmlReport) {
-        int start = xmlReport.indexOf("<version");
-        int end = xmlReport.indexOf("/>", start);
-        return start < 0 || end < 0 ? "(no version element)" : xmlReport.substring(start, end + 2);
-    }
-
     @Test
     public void customFamilyCanBeApprovedByName() {
         withRatBuildScript(
@@ -352,8 +281,8 @@ public class RatPluginTest extends AbstractPluginTest {
         assertRatTask(result, FAILED);
         assertOutputContains(result, "approvedLicenses");
         assertOutputContains(result, "Apache License Version 2.0");
-        assertOutputContains(result, "Apache License");
-        assertOutputContains(result, "The MIT License");
+        assertOutputContains(result, "[AL   ] Apache License");
+        assertOutputContains(result, "[MIT  ] The MIT License");
         assertOutputContains(result, "failOnError does not apply to configuration errors");
         assertOutputDoesNotContain(result, "See file:");
     }
@@ -467,7 +396,45 @@ public class RatPluginTest extends AbstractPluginTest {
         assertOutputContains(result, "License families:");
         assertOutputContains(result, "[MYFOO] Foo License - not approved");
         assertOutputContains(result, "[MIT  ] The MIT License - approved");
+    }
+
+    @Test
+    public void verboseRevealsRatInfoMessages() {
+        withRatBuildScript("    verbose.set(true)");
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        BuildResult result = build("check");
+        assertRatTask(result, SUCCESS);
         assertOutputContains(result, "Excluding");
+    }
+
+    @Test
+    public void reportDirIsNeverAudited() {
+        withBuildScript(String.join(
+                "\n",
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    exclude('build.gradle', 'settings.gradle', '.gradle-test-kit/**')",
+                "}"));
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        assertRatTask(build("check"), SUCCESS);
+        assertRatTask(build("check"), SUCCESS);
+        assertFalse(readReport("rat-report.xml").contains("reports/rat/"), "Expected the reports to be left out");
+    }
+
+    @Test
+    public void substringMatcherWithoutSubstringsFailsAtConfigurationTime() {
+        withRatBuildScript("    substringMatcher(\"MYFOO\", \"Foo License\")");
+        withFile("foo-marker.txt", Fixtures.FOO_MARKER);
+
+        BuildResult result = buildAndFail("check");
+        assertRatTaskDidNotRun(result);
+        assertOutputContains(result, "Foo License");
+        assertOutputContains(result, "declares no substring");
     }
 
     @Test
@@ -556,8 +523,10 @@ public class RatPluginTest extends AbstractPluginTest {
         assertRatTask(build("check"), SUCCESS);
     }
 
-    private void assertRatTask(BuildResult result, TaskOutcome outcome) {
-        assertEquals(outcome, outcomeOf(result, ":rat"));
+    private static String versionElementOf(String xmlReport) {
+        int start = xmlReport.indexOf("<version");
+        int end = xmlReport.indexOf("/>", start);
+        return start < 0 || end < 0 ? "(no version element)" : xmlReport.substring(start, end + 2);
     }
 
     private void assertOutputContainsAuditFailureMessage(BuildResult result) {
@@ -572,15 +541,15 @@ public class RatPluginTest extends AbstractPluginTest {
     }
 
     private File xmlReportFile() {
-        return new File(getRootDir(), "build/reports/rat/rat-report.xml");
+        return reportFile("rat-report.xml");
     }
 
     private File plainReportFile() {
-        return new File(getRootDir(), "build/reports/rat/rat-report.txt");
+        return reportFile("rat-report.txt");
     }
 
     private File htmlReportFile() {
-        return new File(getRootDir(), "build/reports/rat/index.html");
+        return reportFile("index.html");
     }
 
     private String relativeToRootDir(File file) {
