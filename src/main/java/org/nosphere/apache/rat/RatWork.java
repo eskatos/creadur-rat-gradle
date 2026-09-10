@@ -55,16 +55,13 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
 
     private static final Logger LOGGER = Logging.getLogger(RatWork.class);
 
-    // Rat 0.17 calls these media types binary and skips their headers. 0.15 checked them.
+    // Rat 0.17 and 0.18 call these media types binary and skip their headers. 0.15 checked them.
     // Tika custom-mimetypes cannot fix it, glob conflict. Here we patch Rat's private map.
     // List stays explicit: deriving from Tika text/plain children would drag in JSON.
+    // JavaScript left the list with Tika 3, which names it text/javascript.
     // Must fail loud if the field is gone. Delete when TikaProcessor.fromMediaType is fixed upstream.
     private static final List<String> TEXT_MEDIA_TYPES = Arrays.asList(
-            "application/x-sh",
-            "application/x-bat",
-            "application/javascript",
-            "application/rls-services+xml",
-            "application/xslt+xml");
+            "application/x-sh", "application/x-bat", "application/rls-services+xml", "application/xslt+xml");
 
     private final TransformerFactory transformerFactory = TransformerFactory.newInstance();
 
@@ -78,6 +75,7 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
         reportDir.mkdirs();
         ReportConfiguration config = new RatConfigurationBuilder(spec).build();
         if (verbose) {
+            LOGGER.lifecycle(workerJvm());
             LOGGER.lifecycle(RatConfigurationBuilder.licenseFamilyTable(config));
         }
         Reporter reporter = new Reporter(config);
@@ -102,6 +100,11 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
             throw new GradleException(message);
         }
         LOGGER.warn(message);
+    }
+
+    private static String workerJvm() {
+        return String.format(
+                "Apache Rat runs on Java %s (%s)", System.getProperty("java.version"), System.getProperty("java.home"));
     }
 
     private static ClaimStatistic runAudit(Reporter reporter) {

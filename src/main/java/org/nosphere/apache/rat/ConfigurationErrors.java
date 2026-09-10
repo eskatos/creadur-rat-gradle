@@ -25,7 +25,6 @@ final class ConfigurationErrors {
     private ConfigurationErrors() {}
 
     static GradleException configurationError(String detail) {
-        return new GradleException(
-                "Apache Rat configuration error: " + detail + " failOnError does not apply to configuration errors.");
+        return new GradleException("Apache Rat configuration error: " + detail);
     }
 }

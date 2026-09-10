@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Set;
 import javax.inject.Inject;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.JavaVersion;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.ConfigurableFileTree;
@@ -55,13 +56,19 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.util.PatternFilterable;
 import org.gradle.api.tasks.util.PatternSet;
+import org.gradle.jvm.toolchain.JavaLanguageVersion;
+import org.gradle.jvm.toolchain.JavaLauncher;
+import org.gradle.jvm.toolchain.JavaToolchainService;
+import org.gradle.workers.ProcessWorkerSpec;
 import org.gradle.workers.WorkQueue;
 import org.gradle.workers.WorkerExecutor;
 
 @CacheableTask
 public class RatTask extends DefaultTask implements PatternFilterable {
 
-    private static final String RAT_VERSION = "0.17";
+    private static final String RAT_VERSION = "0.18";
+
+    static final int RAT_JAVA_VERSION = 17;
 
     private final PatternSet patternSet = new PatternSet().exclude("**/.gradle/**");
 
@@ -83,10 +90,16 @@ public class RatTask extends DefaultTask implements PatternFilterable {
 
     private final DirectoryProperty reportDir;
 
+    private final Property<JavaLauncher> javaLauncher;
+
     private final FileCollection ratClasspath;
 
     @Inject
-    public RatTask(ObjectFactory objects, ProjectLayout layout, WorkerExecutor workerExecutor) {
+    public RatTask(
+            ObjectFactory objects,
+            ProjectLayout layout,
+            WorkerExecutor workerExecutor,
+            JavaToolchainService toolchains) {
         this.objects = objects;
         this.workerExecutor = workerExecutor;
 
@@ -107,6 +120,12 @@ public class RatTask extends DefaultTask implements PatternFilterable {
 
         this.approvedLicenses = objects.listProperty(String.class);
         this.approvedLicenses.set(Collections.<String>emptyList());
+
+        this.javaLauncher = objects.property(JavaLauncher.class);
+        if (gradleRunsOnJavaOlderThan(RAT_JAVA_VERSION)) {
+            this.javaLauncher.convention(toolchains.launcherFor(
+                    spec -> spec.getLanguageVersion().set(JavaLanguageVersion.of(RAT_JAVA_VERSION))));
+        }
 
         this.reportDir = objects.directoryProperty();
         this.reportDir.set(getProject()
@@ -129,6 +148,11 @@ public class RatTask extends DefaultTask implements PatternFilterable {
         return verbose;
     }
 
+    /**
+     * Whether unapproved licenses fail the build, defaults to {@code true}.
+     *
+     * <p>Configuration errors always fail the build, whatever this is set to.
+     */
     @Input
     public Property<Boolean> getFailOnError() {
         return failOnError;
@@ -261,6 +285,11 @@ public class RatTask extends DefaultTask implements PatternFilterable {
         return reportDir;
     }
 
+    @Internal
+    public Property<JavaLauncher> getJavaLauncher() {
+        return javaLauncher;
+    }
+
     @InputFiles
     @Classpath
     protected FileCollection getRatClasspath() {
@@ -270,8 +299,7 @@ public class RatTask extends DefaultTask implements PatternFilterable {
     @TaskAction
     public void rat() {
         requireAtLeastOneLicenseMatcher();
-        WorkQueue workQueue =
-                workerExecutor.processIsolation(spec -> spec.getClasspath().from(ratClasspath));
+        WorkQueue workQueue = workerExecutor.processIsolation(this::configureWorker);
         FileTree inputFiles = getInputFiles();
         workQueue.submit(RatWork.class, parameters -> {
             parameters.getVerbose().set(verbose);
@@ -283,6 +311,29 @@ public class RatTask extends DefaultTask implements PatternFilterable {
             parameters.getInputFiles().from(inputFiles);
             parameters.getReportDir().set(reportDir);
         });
+    }
+
+    private void configureWorker(ProcessWorkerSpec spec) {
+        spec.getClasspath().from(ratClasspath);
+        JavaLauncher launcher = javaLauncher.getOrNull();
+        if (launcher != null) {
+            requireJavaForRat(launcher);
+            spec.forkOptions(fork ->
+                    fork.setExecutable(launcher.getExecutablePath().getAsFile().getAbsolutePath()));
+        }
+    }
+
+    private static void requireJavaForRat(JavaLauncher launcher) {
+        int javaVersion = launcher.getMetadata().getLanguageVersion().asInt();
+        if (javaVersion < RAT_JAVA_VERSION) {
+            throw configurationError("javaLauncher points at Java " + javaVersion + " but Apache Rat " + RAT_VERSION
+                    + " needs Java " + RAT_JAVA_VERSION + " or later. Set javaLauncher to a Java " + RAT_JAVA_VERSION
+                    + " toolchain, or leave it unset.");
+        }
+    }
+
+    private static boolean gradleRunsOnJavaOlderThan(int javaVersion) {
+        return !JavaVersion.current().isCompatibleWith(JavaVersion.toVersion(javaVersion));
     }
 
     private void requireAtLeastOneLicenseMatcher() {

@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.11.0
+
+- Upgrades the bundled Apache RAT from `0.17` to `0.18`.
+- RAT `0.18` needs Java `17`. Gradle itself may still run on Java `8`: the plugin runs RAT in a separate
+  worker process and picks the JVM for it. When Gradle runs on Java `8` to `16`, a JDK `17` must be findable by
+  Gradle, or the build fails.
+- New `javaLauncher` task property to pick the JVM RAT runs on. It must be Java `17` or later. See the README's
+  "Java for RAT" section.
+- The minimum Gradle version changes from `6.0` to `7.0` because of the JVM toolchains requirement.
+
+### Notable changes in RAT
+
+- PDF files are treated as binary and no longer license checked. RAT `0.17` audited PDFs that were
+  mostly text. RAT `0.15` and earlier treated them as binary too.
+- The `encoding` column of the reports may change for some files: RAT now detects the charset from
+  the first 256 bytes instead of 12 000.
+- `verbose = true` prints fewer lines from RAT: RAT moved its exclusion messages from INFO to DEBUG.
+- Tika `3.2.3` replaces `2.9.4`, which closes CVE-2025-66516. The resolved artifacts keep the same
+  names, with new versions.
+
 ## 0.10.0 - 2026-09-10
 
 Upgrades the bundled Apache RAT from `0.15` to `0.17`.
@@ -108,12 +128,6 @@ commons-cli:commons-cli
 org.apache.tika:tika-core, tika-parser-text-module
 org.slf4j:slf4j-api
 ```
-
-### Unchanged
-
-`verbose`, `failOnError`, `inputDir`, `reportDir`, `addDefaultMatchers`, the include and exclude
-patterns, the `substringMatcher` signature, and the report file names and locations all keep working
-as before. So do the configuration cache and the build cache.
 
 ### Improved
 
