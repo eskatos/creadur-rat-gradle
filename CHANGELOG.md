@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.10.0
+## 0.10.0 - PENDING
 
 Upgrades the bundled Apache RAT from `0.15` to `0.17`.
 
@@ -123,8 +123,14 @@ as before. So do the configuration cache and the build cache.
   `--info` and `--debug` instead of always being printed.
 - SPDX license tags are now detected, so files marked with an SPDX identifier can be recognized.
 - The three reports are produced from a single scan.
+- A file RAT cannot read fails the build. `0.9.0` logged it and skipped every file after it, so the
+  audit could pass on a partial file set.
+- A `substringMatcher` with no substring, or a blank one, fails at configuration time. It used to
+  match nothing and every file ended up unapproved with no hint why.
+- The report directory is never audited, even when it sits inside `inputDir`.
+- Reports list files in sorted order, so they are the same on every machine.
 
-## Migration
+### Migration
 
 1. Update the plugin version to `0.10.0`.
 2. Remove `stylesheet` if you set it. Move custom rendering to your own task reading `rat-report.xml`.
@@ -138,3 +144,110 @@ as before. So do the configuration cache and the build cache.
    exclude the files.
 7. If any script reads `rat-report.txt` or `index.html`, check it still works.
 8. If you use a curated artifact mirror, allow the artifacts listed above.
+
+## 0.9.0 - 2026-09-09
+
+- Plugin rewritten from Kotlin to Java. No change to the DSL.
+
+## 0.8.2 - 2026-09-07
+
+- RAT is downloaded through the buildscript repositories, the plugin portal by default. No project
+  repository is needed any more.
+- No more deprecation warning on Gradle 9.
+- Supports Gradle up to `9.x`.
+
+## 0.8.1 - 2023-09-03
+
+- Fix a configuration cache failure on Gradle `8.1` and later.
+- Supports Gradle up to `8.x`.
+
+## 0.8.0 - 2022-09-21
+
+- Upgrades the bundled RAT from `0.13` to `0.15`.
+
+## 0.7.1 - 2022-04-05
+
+- Supports Gradle up to `7.x`.
+
+## 0.7.0 - 2020-06-06
+
+- Requires Java `8` and Gradle `6.0`.
+- Works with the configuration cache.
+
+## 0.6.0 - 2020-01-11
+
+- Custom license matching: `addDefaultMatchers`, `substringMatcher(...)` and `approvedLicense(...)`.
+- `verbose` lists unapproved files in sorted order.
+- Supports Gradle up to `6.x`.
+
+## 0.5.3 - 2019-12-13
+
+- `verbose` prints the list of files with unapproved licenses instead of the whole plain text report.
+
+## 0.5.2 - 2019-08-19
+
+- The audit failure message ends with a clickable link to the HTML report.
+
+## 0.5.1 - 2019-08-19
+
+- No more deprecation warnings on Gradle `5.6`.
+
+## 0.5.0 - 2019-07-23
+
+- The task implements `PatternFilterable`: `include(...)` and `exclude(...)` with patterns, specs or
+  closures.
+
+## 0.4.0 - 2019-01-14
+
+Complete rewrite. Breaking changes.
+
+- The `rat { }` extension is gone. Configure the task: `tasks.rat { }`. Properties are lazy:
+  `inputDir.set(...)`, `reportDir.set(...)`, `failOnError.set(...)`.
+- `xmlOutput`, `htmlOutput` and `plainOutput` are gone. One RAT run always produces the XML, plain
+  text and HTML reports.
+- New `excludeFile` for a RAT excludes file, `stylesheet` for a custom HTML stylesheet, `verbose` to
+  print the plain text report.
+- The task is cacheable and runs RAT in a worker.
+- Upgrades the bundled RAT from `0.12` to `0.13`.
+- Requires Java `6` and Gradle `4.7`.
+
+## 0.3.1 - 2017-07-16
+
+- Supports Gradle up to `4.x`.
+
+## 0.3.0 - 2016-12-21
+
+- New `org.nosphere.apache.rat-base` plugin. It registers no task, so you can declare your own
+  `RatTask` tasks.
+
+## 0.2.2 - 2016-09-11
+
+- Fix the up-to-date check of the `rat` task.
+- Supports Gradle `3.x`.
+
+## 0.2.1 - 2016-06-13
+
+- Upgrades the bundled RAT from `0.11` to `0.12`.
+
+## 0.2.0 - 2015-09-09
+
+- New `xmlOutput`, `htmlOutput` and `plainOutput` options.
+
+## 0.1.3 - 2015-06-28
+
+- Default `reportDir` under the project build directory.
+- Excludes are task inputs, so changing them reruns the task.
+
+## 0.1.2 - 2015-06-21
+
+- Fix `reportDir` handling.
+
+## 0.1.1 - 2015-06-18
+
+- Requires Java `5` instead of `7`.
+- The audit failure message names the HTML report.
+
+## 0.1.0 - 2015-06-18
+
+First release. `rat` task with `inputDir`, `reportDir`, `excludes` and `failOnError`, XML and HTML
+reports, bundled RAT `0.11`. `check` depends on `rat` when present.
