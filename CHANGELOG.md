@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.10.0 - PENDING
+## 0.10.0 - 2026-09-10
 
 Upgrades the bundled Apache RAT from `0.15` to `0.17`.
 
