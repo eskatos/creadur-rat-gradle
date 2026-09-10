@@ -32,7 +32,7 @@ plugins {
 }
 
 group = "org.nosphere.apache"
-version = "0.10.0"
+version = "0.11.0-SNAPSHOT"
 
 tasks.updateDaemonJvm {
     languageVersion = JavaLanguageVersion.of(21)
