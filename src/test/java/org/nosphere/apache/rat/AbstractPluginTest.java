@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 import org.gradle.api.JavaVersion;
 import org.gradle.testkit.runner.BuildResult;
@@ -52,6 +53,8 @@ public abstract class AbstractPluginTest {
     static final int RAT_JAVA_VERSION = RatTask.RAT_JAVA_VERSION;
 
     static final JavaVersion RAT_JAVA = JavaVersion.toVersion(RAT_JAVA_VERSION);
+
+    private static final String ISOLATED_PROJECTS_BANNER = "isolated projects is an incubating feature";
 
     protected final GradleVersion gradleVersion = GradleVersion.version(testedGradleVersion());
 
@@ -80,7 +83,9 @@ public abstract class AbstractPluginTest {
 
     protected void withBinaryFile(String path, byte[] bytes) {
         try {
-            Files.write(new File(getRootDir(), path).toPath(), bytes);
+            File file = new File(getRootDir(), path);
+            file.getParentFile().mkdirs();
+            Files.write(file.toPath(), bytes);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
@@ -132,23 +137,27 @@ public abstract class AbstractPluginTest {
     }
 
     protected BuildResult build(String... arguments) {
-        return gradleRunnerFor(installedJdkHomes(), true, arguments).build();
+        return run(installedJdkHomes(), true, false, arguments);
     }
 
     protected BuildResult buildAndFail(String... arguments) {
-        return gradleRunnerFor(installedJdkHomes(), true, arguments).buildAndFail();
+        return run(installedJdkHomes(), true, true, arguments);
     }
 
     protected BuildResult buildWithoutToolchains(String... arguments) {
-        return gradleRunnerFor("", true, arguments).build();
+        return run("", true, false, arguments);
     }
 
     protected BuildResult buildAndFailWithoutToolchains(String... arguments) {
-        return gradleRunnerFor("", true, arguments).buildAndFail();
+        return run("", true, true, arguments);
     }
 
     protected BuildResult buildAndFailWithoutToolchainsNorConfigurationCache(String... arguments) {
-        return gradleRunnerFor("", false, arguments).buildAndFail();
+        return run("", false, true, arguments);
+    }
+
+    protected boolean isolatedProjectsEnabled() {
+        return isGreaterOrEqualThan(gradleVersion, "7.1");
     }
 
     protected static boolean daemonRunsRatJavaOrLater() {
@@ -203,16 +212,34 @@ public abstract class AbstractPluginTest {
         return gradleVersion.compareTo(GradleVersion.version(version)) >= 0;
     }
 
-    private GradleRunner gradleRunnerFor(
-            String javaInstallationPaths, boolean configurationCache, String... arguments) {
+    private BuildResult run(
+            String javaInstallationPaths, boolean configurationCache, boolean expectFailure, String... arguments) {
         List<String> allArguments = new ArrayList<>(Arrays.asList(arguments));
         allArguments.addAll(extraArguments(javaInstallationPaths, configurationCache));
-        return GradleRunner.create()
+        GradleRunner runner = GradleRunner.create()
                 .withGradleVersion(gradleVersion.getVersion())
                 .withPluginClasspath()
                 .forwardOutput()
                 .withProjectDir(getRootDir())
                 .withArguments(allArguments);
+        BuildResult result = expectFailure ? runner.buildAndFail() : runner.build();
+        if (configurationCache && isolatedProjectsEnabled() && !quiet(arguments)) {
+            assertIsolatedProjectsEnabled(result);
+        }
+        return result;
+    }
+
+    private void assertIsolatedProjectsEnabled(BuildResult result) {
+        assertTrue(
+                result.getOutput().toLowerCase(Locale.ROOT).contains(ISOLATED_PROJECTS_BANNER),
+                () -> "Expected Isolated Projects to be enabled on Gradle " + gradleVersion
+                        + " but its banner is missing from the build output. If Gradle stopped printing it,"
+                        + " find another proof that the feature is on.");
+    }
+
+    private static boolean quiet(String... arguments) {
+        List<String> all = Arrays.asList(arguments);
+        return all.contains("-q") || all.contains("--quiet");
     }
 
     private List<String> extraArguments(String javaInstallationPaths, boolean configurationCache) {
@@ -224,8 +251,17 @@ public abstract class AbstractPluginTest {
         arguments.add(toolchainProperty("paths", javaInstallationPaths));
         if (configurationCache) {
             arguments.add("--configuration-cache");
+            if (isolatedProjectsEnabled()) {
+                arguments.add(isolatedProjectsSwitch());
+            }
         }
         return arguments;
+    }
+
+    private String isolatedProjectsSwitch() {
+        return isGreaterOrEqualThan(gradleVersion, "9.7")
+                ? "--isolated-projects"
+                : "-Dorg.gradle.unsafe.isolated-projects=true";
     }
 
     private String toolchainProperty(String name, String value) {

@@ -9,6 +9,7 @@
 - New `javaLauncher` task property to pick the JVM RAT runs on. It must be Java `17` or later. See the README's
   "Java for RAT" section.
 - The minimum Gradle version changes from `6.0` to `7.0` because of the JVM toolchains requirement.
+- Compatible with Gradle's Isolated Projects.
 
 ### Notable changes in RAT
 
