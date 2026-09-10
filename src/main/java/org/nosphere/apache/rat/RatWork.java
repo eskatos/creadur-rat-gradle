@@ -78,6 +78,7 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
         reportDir.mkdirs();
         ReportConfiguration config = new RatConfigurationBuilder(spec).build();
         if (verbose) {
+            LOGGER.lifecycle(workerJvm());
             LOGGER.lifecycle(RatConfigurationBuilder.licenseFamilyTable(config));
         }
         Reporter reporter = new Reporter(config);
@@ -102,6 +103,11 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
             throw new GradleException(message);
         }
         LOGGER.warn(message);
+    }
+
+    private static String workerJvm() {
+        return "Apache Rat runs on Java " + System.getProperty("java.version") + " (" + System.getProperty("java.home")
+                + ")";
     }
 
     private static ClaimStatistic runAudit(Reporter reporter) {

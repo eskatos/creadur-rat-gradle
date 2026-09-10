@@ -134,12 +134,19 @@ val testedGradleVersions = listOf(
     "9.0.0", "9.7.1",
 )
 
-fun javaLanguageVersionFor(gradleVersion: String): Int =
-    if (GradleVersion.version(gradleVersion) >= GradleVersion.version("8.10")) 17
-    else 8
+fun javaLanguageVersionFor(gradleVersion: String): Int = when {
+    GradleVersion.version(gradleVersion) >= GradleVersion.version("9.0") -> 21
+    GradleVersion.version(gradleVersion) >= GradleVersion.version("8.10") -> 17
+    else -> 8
+}
+
+val ratJdk17Home = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(17)
+}.map { it.metadata.installationPath.asFile.absolutePath }
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    systemProperty("ratJdk17Home", ratJdk17Home.get())
 }
 
 tasks.test {

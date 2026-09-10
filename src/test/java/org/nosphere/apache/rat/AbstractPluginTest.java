@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
@@ -88,14 +89,30 @@ public abstract class AbstractPluginTest {
     }
 
     protected void withRatBuildScript(String... taskConfiguration) {
-        List<String> lines = new ArrayList<>(Arrays.asList(
-                "plugins {",
-                "    id(\"base\")",
-                "    id(\"org.nosphere.apache.rat\")",
-                "}",
-                "tasks.rat {",
-                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']"));
-        lines.addAll(Arrays.asList(taskConfiguration));
+        withRatBuildScript(Collections.<String>emptyList(), Arrays.asList(taskConfiguration));
+    }
+
+    protected void withRatBuildScriptUsingJavaLauncher(String... taskConfiguration) {
+        List<String> configuration = new ArrayList<>();
+        configuration.add("    javaLauncher.set(javaToolchains.launcherFor {"
+                + " it.languageVersion.set(JavaLanguageVersion.of(17)) })");
+        configuration.addAll(Arrays.asList(taskConfiguration));
+        withRatBuildScript(Collections.singletonList("java-base"), configuration);
+    }
+
+    private void withRatBuildScript(List<String> extraPlugins, List<String> taskConfiguration) {
+        List<String> lines = new ArrayList<>();
+        lines.add("plugins {");
+        lines.add("    id(\"base\")");
+        for (String plugin : extraPlugins) {
+            lines.add("    id(\"" + plugin + "\")");
+        }
+        lines.add("    id(\"org.nosphere.apache.rat\")");
+        lines.add("}");
+        lines.add("tasks.rat {");
+        lines.add(
+                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']");
+        lines.addAll(taskConfiguration);
         lines.add("}");
         withBuildScript(String.join("\n", lines));
     }
@@ -113,11 +130,31 @@ public abstract class AbstractPluginTest {
     }
 
     protected BuildResult build(String... arguments) {
-        return gradleRunnerFor(arguments).build();
+        return gradleRunnerFor(jdk17Home(), arguments).build();
     }
 
     protected BuildResult buildAndFail(String... arguments) {
-        return gradleRunnerFor(arguments).buildAndFail();
+        return gradleRunnerFor(jdk17Home(), arguments).buildAndFail();
+    }
+
+    protected BuildResult buildWithoutJava17(String... arguments) {
+        return gradleRunnerFor("", arguments).build();
+    }
+
+    protected BuildResult buildAndFailWithoutJava17(String... arguments) {
+        return gradleRunnerFor("", arguments).buildAndFail();
+    }
+
+    protected static boolean daemonRunsJava17() {
+        return JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17);
+    }
+
+    protected static String jdk17Home() {
+        String home = System.getProperty("ratJdk17Home");
+        if (home == null) {
+            throw new IllegalStateException("System Property `ratJdk17Home` is not set!");
+        }
+        return home;
     }
 
     protected TaskOutcome outcomeOf(BuildResult result, String path) {
@@ -146,9 +183,9 @@ public abstract class AbstractPluginTest {
         return gradleVersion.compareTo(GradleVersion.version(version)) >= 0;
     }
 
-    private GradleRunner gradleRunnerFor(String... arguments) {
+    private GradleRunner gradleRunnerFor(String javaInstallationPaths, String... arguments) {
         List<String> allArguments = new ArrayList<>(Arrays.asList(arguments));
-        allArguments.addAll(extraArguments());
+        allArguments.addAll(extraArguments(javaInstallationPaths));
         return GradleRunner.create()
                 .withGradleVersion(gradleVersion.getVersion())
                 .withPluginClasspath()
@@ -157,10 +194,14 @@ public abstract class AbstractPluginTest {
                 .withArguments(allArguments);
     }
 
-    private List<String> extraArguments() {
+    private List<String> extraArguments(String javaInstallationPaths) {
         List<String> arguments = new ArrayList<>();
         arguments.add("--stacktrace");
         arguments.add("--warning-mode=fail");
+        String toolchainPropertyPrefix = isGreaterOrEqualThan(gradleVersion, "9.7") ? "-D" : "-P";
+        arguments.add(toolchainPropertyPrefix + "org.gradle.java.installations.auto-detect=false");
+        arguments.add(toolchainPropertyPrefix + "org.gradle.java.installations.auto-download=false");
+        arguments.add(toolchainPropertyPrefix + "org.gradle.java.installations.paths=" + javaInstallationPaths);
         if (configurationCache) {
             arguments.add("--configuration-cache");
         }

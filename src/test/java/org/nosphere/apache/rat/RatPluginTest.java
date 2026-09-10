@@ -24,6 +24,7 @@ import static org.gradle.testkit.runner.TaskOutcome.SUCCESS;
 import static org.gradle.testkit.runner.TaskOutcome.UP_TO_DATE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -35,7 +36,7 @@ public class RatPluginTest extends AbstractPluginTest {
 
     @Test
     public void successUpToDateAndFromCache() throws IOException {
-        withRatBuildScript("    verbose.set(true)", "    exclude('guh/**', 'no-license-file.txt')");
+        withRatBuildScriptUsingJavaLauncher("    verbose.set(true)", "    exclude('guh/**', 'no-license-file.txt')");
         withFile("no-license-file.txt", "Nothing here.");
 
         assertRatTask(build("check"), SUCCESS);
@@ -382,6 +383,73 @@ public class RatPluginTest extends AbstractPluginTest {
         assertRatTask(result, SUCCESS);
         assertOutputDoesNotContain(result, "Excluding");
         assertOutputDoesNotContain(result, "INFO:");
+    }
+
+    @Test
+    public void verbosePrintsTheWorkerJvm() {
+        withRatBuildScript("    verbose.set(true)");
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        BuildResult result = build("check");
+        assertRatTask(result, SUCCESS);
+        assertOutputContains(result, "Apache Rat runs on Java ");
+    }
+
+    @Test
+    public void javaLauncherRunsTheWorkerOnThatJvm() {
+        withRatBuildScriptUsingJavaLauncher("    verbose.set(true)");
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        BuildResult result = build("check");
+        assertRatTask(result, SUCCESS);
+        assertOutputContains(result, "Apache Rat runs on Java 17.");
+        assertOutputContains(result, jdk17Home());
+    }
+
+    @Test
+    public void workerRunsOnJava17WhenTheDaemonIsOlder() {
+        withRatBuildScript("    verbose.set(true)");
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        BuildResult result = build("check");
+        assertRatTask(result, SUCCESS);
+        if (daemonRunsJava17()) {
+            assertOutputContains(
+                    result,
+                    "Apache Rat runs on Java " + System.getProperty("java.version") + " ("
+                            + System.getProperty("java.home") + ")");
+        } else {
+            assertOutputContains(result, "Apache Rat runs on Java 17.");
+            assertOutputContains(result, jdk17Home());
+        }
+    }
+
+    @Test
+    public void missingJava17FailsNamingTheToolchain() {
+        withRatBuildScript();
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        if (daemonRunsJava17()) {
+            assertRatTask(buildWithoutJava17("check"), SUCCESS);
+        } else {
+            BuildResult result = buildAndFailWithoutJava17("check");
+            assertNotEquals(SUCCESS, outcomeOf(result, ":rat"));
+            assertOutputContains(result, "languageVersion=17");
+        }
+    }
+
+    @Test
+    public void missingJava17FailsEvenWithFailOnErrorFalse() {
+        withRatBuildScript("    failOnError.set(false)");
+        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
+
+        if (daemonRunsJava17()) {
+            assertRatTask(buildWithoutJava17("check"), SUCCESS);
+        } else {
+            BuildResult result = buildAndFailWithoutJava17("check");
+            assertNotEquals(SUCCESS, outcomeOf(result, ":rat"));
+            assertOutputContains(result, "languageVersion=17");
+        }
     }
 
     @Test

@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.Set;
 import javax.inject.Inject;
 import org.gradle.api.DefaultTask;
+import org.gradle.api.JavaVersion;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.ConfigurableFileTree;
@@ -55,6 +56,10 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.util.PatternFilterable;
 import org.gradle.api.tasks.util.PatternSet;
+import org.gradle.jvm.toolchain.JavaLanguageVersion;
+import org.gradle.jvm.toolchain.JavaLauncher;
+import org.gradle.jvm.toolchain.JavaToolchainService;
+import org.gradle.workers.ProcessWorkerSpec;
 import org.gradle.workers.WorkQueue;
 import org.gradle.workers.WorkerExecutor;
 
@@ -83,10 +88,16 @@ public class RatTask extends DefaultTask implements PatternFilterable {
 
     private final DirectoryProperty reportDir;
 
+    private final Property<JavaLauncher> javaLauncher;
+
     private final FileCollection ratClasspath;
 
     @Inject
-    public RatTask(ObjectFactory objects, ProjectLayout layout, WorkerExecutor workerExecutor) {
+    public RatTask(
+            ObjectFactory objects,
+            ProjectLayout layout,
+            WorkerExecutor workerExecutor,
+            JavaToolchainService toolchains) {
         this.objects = objects;
         this.workerExecutor = workerExecutor;
 
@@ -107,6 +118,12 @@ public class RatTask extends DefaultTask implements PatternFilterable {
 
         this.approvedLicenses = objects.listProperty(String.class);
         this.approvedLicenses.set(Collections.<String>emptyList());
+
+        this.javaLauncher = objects.property(JavaLauncher.class);
+        if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
+            this.javaLauncher.convention(
+                    toolchains.launcherFor(spec -> spec.getLanguageVersion().set(JavaLanguageVersion.of(17))));
+        }
 
         this.reportDir = objects.directoryProperty();
         this.reportDir.set(getProject()
@@ -261,6 +278,11 @@ public class RatTask extends DefaultTask implements PatternFilterable {
         return reportDir;
     }
 
+    @Internal
+    public Property<JavaLauncher> getJavaLauncher() {
+        return javaLauncher;
+    }
+
     @InputFiles
     @Classpath
     protected FileCollection getRatClasspath() {
@@ -270,8 +292,7 @@ public class RatTask extends DefaultTask implements PatternFilterable {
     @TaskAction
     public void rat() {
         requireAtLeastOneLicenseMatcher();
-        WorkQueue workQueue =
-                workerExecutor.processIsolation(spec -> spec.getClasspath().from(ratClasspath));
+        WorkQueue workQueue = workerExecutor.processIsolation(this::configureWorker);
         FileTree inputFiles = getInputFiles();
         workQueue.submit(RatWork.class, parameters -> {
             parameters.getVerbose().set(verbose);
@@ -283,6 +304,15 @@ public class RatTask extends DefaultTask implements PatternFilterable {
             parameters.getInputFiles().from(inputFiles);
             parameters.getReportDir().set(reportDir);
         });
+    }
+
+    private void configureWorker(ProcessWorkerSpec spec) {
+        spec.getClasspath().from(ratClasspath);
+        JavaLauncher launcher = javaLauncher.getOrNull();
+        if (launcher != null) {
+            spec.forkOptions(fork ->
+                    fork.setExecutable(launcher.getExecutablePath().getAsFile().getAbsolutePath()));
+        }
     }
 
     private void requireAtLeastOneLicenseMatcher() {
