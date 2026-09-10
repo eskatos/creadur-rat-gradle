@@ -18,6 +18,11 @@
  */
 package org.nosphere.apache.rat;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -31,6 +36,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import org.gradle.api.JavaVersion;
 import org.gradle.testkit.runner.BuildResult;
+import org.gradle.testkit.runner.BuildTask;
 import org.gradle.testkit.runner.GradleRunner;
 import org.gradle.testkit.runner.TaskOutcome;
 import org.gradle.util.GradleVersion;
@@ -66,8 +72,12 @@ public abstract class AbstractPluginTest {
     }
 
     protected void withFile(String path, String text) {
+        withBinaryFile(path, text.getBytes(StandardCharsets.UTF_8));
+    }
+
+    protected void withBinaryFile(String path, byte[] bytes) {
         try {
-            Files.write(new File(getRootDir(), path).toPath(), text.getBytes(StandardCharsets.UTF_8));
+            Files.write(new File(getRootDir(), path).toPath(), bytes);
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
@@ -75,6 +85,31 @@ public abstract class AbstractPluginTest {
 
     protected void withBuildScript(String text) {
         withFile("build.gradle", text);
+    }
+
+    protected void withRatBuildScript(String... taskConfiguration) {
+        List<String> lines = new ArrayList<>(Arrays.asList(
+                "plugins {",
+                "    id(\"base\")",
+                "    id(\"org.nosphere.apache.rat\")",
+                "}",
+                "tasks.rat {",
+                "    excludes = ['build.gradle', 'settings.gradle', 'build/**', '.gradle/**', '.gradle-test-kit/**']"));
+        lines.addAll(Arrays.asList(taskConfiguration));
+        lines.add("}");
+        withBuildScript(String.join("\n", lines));
+    }
+
+    protected File reportFile(String name) {
+        return new File(getRootDir(), "build/reports/rat/" + name);
+    }
+
+    protected String readReport(String name) {
+        try {
+            return new String(Files.readAllBytes(reportFile(name).toPath()), StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
     }
 
     protected BuildResult build(String... arguments) {
@@ -86,11 +121,25 @@ public abstract class AbstractPluginTest {
     }
 
     protected TaskOutcome outcomeOf(BuildResult result, String path) {
-        return result.task(path) == null ? null : result.task(path).getOutcome();
+        BuildTask task = result.task(path);
+        return task == null ? null : task.getOutcome();
     }
 
-    protected boolean isGradleMin63() {
-        return isGreaterOrEqualThan(gradleVersion, "6.3");
+    protected void assertRatTask(BuildResult result, TaskOutcome outcome) {
+        assertEquals(outcome, outcomeOf(result, ":rat"));
+    }
+
+    protected void assertRatTaskDidNotRun(BuildResult result) {
+        assertNull(outcomeOf(result, ":rat"));
+    }
+
+    protected void assertOutputContains(BuildResult result, String expected) {
+        assertTrue(result.getOutput().contains(expected), () -> "Expected build output to contain: " + expected);
+    }
+
+    protected void assertOutputDoesNotContain(BuildResult result, String unexpected) {
+        assertFalse(
+                result.getOutput().contains(unexpected), () -> "Expected build output not to contain: " + unexpected);
     }
 
     protected static boolean isGreaterOrEqualThan(GradleVersion gradleVersion, String version) {

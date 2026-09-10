@@ -18,27 +18,14 @@
  */
 package org.nosphere.apache.rat;
 
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.provider.ListProperty;
-import org.gradle.api.provider.Property;
-import org.gradle.workers.WorkParameters;
+import org.gradle.api.GradleException;
 
-public interface RatWorkSpec extends WorkParameters {
+final class ConfigurationErrors {
 
-    Property<Boolean> getVerbose();
+    private ConfigurationErrors() {}
 
-    Property<Boolean> getFailOnError();
-
-    Property<Boolean> getAddDefaultMatchers();
-
-    ListProperty<SubstringMatcher> getSubstringMatchers();
-
-    ListProperty<String> getApprovedLicenses();
-
-    DirectoryProperty getInputDir();
-
-    ConfigurableFileCollection getInputFiles();
-
-    DirectoryProperty getReportDir();
+    static GradleException configurationError(String detail) {
+        return new GradleException(
+                "Apache Rat configuration error: " + detail + " failOnError does not apply to configuration errors.");
+    }
 }

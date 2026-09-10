@@ -19,70 +19,79 @@
 package org.nosphere.apache.rat;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
+import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
-import org.apache.rat.Report;
+import java.util.SortedSet;
+import org.apache.rat.api.Document;
 import org.apache.rat.api.RatException;
-import org.apache.rat.document.impl.FileDocument;
+import org.apache.rat.document.DocumentName;
+import org.apache.rat.document.DocumentNameMatcher;
 import org.apache.rat.report.IReportable;
 import org.apache.rat.report.RatReport;
 import org.gradle.api.GradleException;
 
 class FilesReportable implements IReportable {
 
+    private final Path baseDir;
+
+    private final DocumentName baseName;
+
     private final List<File> files;
 
-    private final File excludeFile;
-
-    FilesReportable(List<File> files, File excludeFile) {
+    FilesReportable(File baseDir, List<File> files) {
+        this.baseDir = baseDir.toPath();
+        this.baseName = DocumentName.builder(baseDir).build();
         this.files = files;
-        this.excludeFile = excludeFile;
+    }
+
+    // Rat's walker catches RatException, logs it, and skips all subsequent files silently.
+    // Rethrow unchecked to prevent that.
+    @Override
+    public void run(RatReport report) {
+        for (File file : files) {
+            try {
+                report.report(new ReportedFile(documentNameOf(file), file));
+            } catch (RatException ex) {
+                throw new GradleException("Apache Rat failed to audit " + file, ex);
+            }
+        }
     }
 
     @Override
-    public void run(RatReport report) throws RatException {
-        FilenameFilter filter = excludeFileFilter();
-        for (File file : files) {
-            if (filter == null || filter.accept(file.getParentFile(), file.getName())) {
-                report.report(new FileDocument(file));
-            }
-        }
+    public DocumentName getName() {
+        return baseName;
     }
 
-    private FilenameFilter excludeFileFilter() {
-        if (excludeFile == null || !excludeFile.isFile()) {
-            return null;
-        }
-        List<String> lines = new ArrayList<>();
-        try {
-            for (String line : Files.readAllLines(excludeFile.toPath(), StandardCharsets.UTF_8)) {
-                if (!line.trim().isEmpty()) {
-                    lines.add(line);
-                }
-            }
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-        if (lines.isEmpty()) {
-            return null;
-        }
-        return createFilenameFilter(lines);
+    private DocumentName documentNameOf(File file) {
+        return baseName.resolve(baseDir.relativize(file.toPath()).toString());
     }
 
-    private FilenameFilter createFilenameFilter(List<String> lines) {
-        try {
-            Method parseExclusions = Report.class.getDeclaredMethod("parseExclusions", List.class);
-            parseExclusions.setAccessible(true);
-            return (FilenameFilter) parseExclusions.invoke(null, lines);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-            throw new GradleException(ex.getMessage(), ex);
+    private static final class ReportedFile extends Document {
+
+        private final File file;
+
+        ReportedFile(DocumentName name, File file) {
+            super(name, DocumentNameMatcher.MATCHES_ALL);
+            this.file = file;
+        }
+
+        @Override
+        public InputStream inputStream() throws IOException {
+            return Files.newInputStream(file.toPath());
+        }
+
+        @Override
+        public boolean isDirectory() {
+            return false;
+        }
+
+        @Override
+        public SortedSet<Document> listChildren() {
+            return Collections.emptySortedSet();
         }
     }
 }
