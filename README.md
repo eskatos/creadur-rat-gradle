@@ -5,7 +5,7 @@
 
 This plugin allows to run the [Apache RAT](https://creadur.apache.org/rat/) release audit tool, focused on licenses.
 
-It bundles Apache RAT `0.17`. The RAT version is an implementation detail and cannot be changed.
+It bundles Apache RAT `0.18`. The RAT version is an implementation detail and cannot be changed. RAT `0.18` needs Java `17`; Gradle itself may run on Java `8`, see [Java for RAT](#java-for-rat).
 
 ## Installation
 
@@ -115,7 +115,7 @@ tasks.rat {
 
 ### License families
 
-RAT `0.17` knows these license families. Use either the name or the category in `approvedLicenses`:
+RAT `0.18` knows these license families. Use either the name or the category in `approvedLicenses`:
 
 | Category | Name |
 |----------|------|
@@ -162,6 +162,39 @@ Execution failed for task ':rat'.
 
 ![Apache Rat HTML Report](src/docs/resources/html_report_header.png "Apache Rat HTML Report")
 
+## Java for RAT
+
+RAT `0.18` needs Java `17`. You normally have nothing to configure: the plugin runs RAT in a separate worker process and picks its JVM by itself:
+
+- Gradle running on Java `17` or later: the worker uses the same JVM as Gradle.
+- Gradle running on Java `8` to `16`: the plugin asks Gradle's toolchain support for a Java `17`
+  and runs the worker on it. Any JDK `17` Gradle can detect works, see the
+  [toolchain documentation](https://docs.gradle.org/current/userguide/toolchains.html#sec:auto_detection).
+  Without one, the build fails with Gradle's own message:
+
+  ```
+  Cannot find a Java installation on your machine ... matching: {languageVersion=17, ...}.
+  Toolchain download repositories have not been configured.
+  ```
+
+  Install a JDK `17`, or let Gradle download one by declaring a toolchain repository in `settings.gradle(.kts)`.
+  For example, you can use the [Foojay Toolchains Plugin](https://github.com/gradle/foojay-toolchains).
+
+To pick the JVM yourself, set the `javaLauncher` task property. The `javaToolchains` extension needs the `java-base` plugin, or the lighter `jvm-toolchains` plugin on Gradle `7.6` and later:
+
+```kotlin
+plugins {
+    id("jvm-toolchains")
+}
+tasks.rat {
+    javaLauncher.set(javaToolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(21))
+    })
+}
+```
+
+`verbose.set(true)` prints which JVM the worker runs on.
+
 ## Logging
 
 The task is quiet on a successful audit. To see RAT's own output, use Gradle's log levels:
@@ -178,7 +211,7 @@ Set `verbose.set(true)` to always print the list of unapproved files and the lic
 
 | Plugin   | Min Java | Min Gradle | Max Gradle | Configuration Cache | Build Cache |
 |----------|----------|------------|------------|---------------------|-------------|
-| `0.11.0` | `1.8`    | `7.0`      | `9.x`      | 🟢                  | 🟢          |
+| `0.11.0` | `1.8` (Gradle), `17` (RAT) | `7.0` | `9.x` | 🟢 | 🟢 |
 | `0.10.0` | `1.8`    | `6.0`      | `9.x`      | 🟢                  | 🟢          |
 | `0.9.0`  | `1.8`    | `6.0`      | `9.x`      | 🟢                  | 🟢          |
 | `0.8.2`  | `1.8`    | `6.0`      | `9.x`      | 🟢                  | 🟢          |
