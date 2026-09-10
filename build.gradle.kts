@@ -25,7 +25,7 @@ import org.nosphere.honker.gradle.HonkerGenNoticeTask
 plugins {
     `java-gradle-plugin`
     `maven-publish`
-    id("com.gradle.plugin-publish") version "2.1.1"
+    id("com.gradle.plugin-publish") version "2.2.1"
     id("com.diffplug.spotless") version "8.10.2"
     id("org.nosphere.apache.rat") version "0.10.0"
     id("org.nosphere.honker") version "0.4.0"
@@ -49,6 +49,7 @@ gradlePlugin {
             compatibility {
                 features {
                     configurationCache = true
+                    isolatedProjects = true
                 }
             }
         }
