@@ -134,26 +134,35 @@ val testedGradleVersions = listOf(
     "9.0.0", "9.7.1",
 )
 
-fun javaLanguageVersionFor(gradleVersion: String): Int = when {
-    GradleVersion.version(gradleVersion) >= GradleVersion.version("9.0") -> 21
-    GradleVersion.version(gradleVersion) >= GradleVersion.version("8.10") -> 17
-    else -> 8
+fun daemonJavaVersionFor(gradleVersion: String): Int {
+    val version = GradleVersion.version(gradleVersion)
+    return when {
+        version >= GradleVersion.version("9.0") -> 21
+        version >= GradleVersion.version("8.10") -> 17
+        else -> 8
+    }
 }
 
-val ratJdk17Home = javaToolchains.launcherFor {
-    languageVersion = JavaLanguageVersion.of(17)
+fun jdkHomeFor(javaVersion: Int) = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(javaVersion)
 }.map { it.metadata.installationPath.asFile.absolutePath }
+
+val daemonJavaVersions = (testedGradleVersions + wrapperGradleVersion).map(::daemonJavaVersionFor).distinct()
+
+class JdkHomes(@get:Internal val homesByVersion: Map<Int, Provider<String>>) : CommandLineArgumentProvider {
+    override fun asArguments() = homesByVersion.map { (version, home) -> "-DjdkHome.$version=${home.get()}" }
+}
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-    systemProperty("ratJdk17Home", ratJdk17Home.get())
+    jvmArgumentProviders.add(JdkHomes(daemonJavaVersions.associateWith { jdkHomeFor(it) }))
 }
 
 tasks.test {
     description = "Runs the test suite with Gradle $wrapperGradleVersion."
     systemProperty("testedGradleVersion", wrapperGradleVersion)
     javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(javaLanguageVersionFor(wrapperGradleVersion))
+        languageVersion = JavaLanguageVersion.of(daemonJavaVersionFor(wrapperGradleVersion))
     }
 }
 testedGradleVersions.minus(wrapperGradleVersion).forEach { testedGradleVersion ->
@@ -164,7 +173,7 @@ testedGradleVersions.minus(wrapperGradleVersion).forEach { testedGradleVersion -
         testClassesDirs = tasks.test.map { it.testClassesDirs }.get()
         systemProperty("testedGradleVersion", testedGradleVersion)
         javaLauncher = javaToolchains.launcherFor {
-            languageVersion = JavaLanguageVersion.of(javaLanguageVersionFor(testedGradleVersion))
+            languageVersion = JavaLanguageVersion.of(daemonJavaVersionFor(testedGradleVersion))
         }
     }
     tasks.check {

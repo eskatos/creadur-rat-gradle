@@ -170,7 +170,7 @@ RAT `0.18` needs Java `17`. You normally have nothing to configure: the plugin r
 - Gradle running on Java `8` to `16`: the plugin asks Gradle's toolchain support for a Java `17`
   and runs the worker on it. Any JDK `17` Gradle can detect works, see the
   [toolchain documentation](https://docs.gradle.org/current/userguide/toolchains.html#sec:auto_detection).
-  Without one, the build fails with Gradle's own message:
+  Without one, the build fails with Gradle's own message. On recent Gradle versions it reads:
 
   ```
   Cannot find a Java installation on your machine ... matching: {languageVersion=17, ...}.
@@ -180,7 +180,7 @@ RAT `0.18` needs Java `17`. You normally have nothing to configure: the plugin r
   Install a JDK `17`, or let Gradle download one by declaring a toolchain repository in `settings.gradle(.kts)`.
   For example, you can use the [Foojay Toolchains Plugin](https://github.com/gradle/foojay-toolchains).
 
-To pick the JVM yourself, set the `javaLauncher` task property. The `javaToolchains` extension needs the `java-base` plugin, or the lighter `jvm-toolchains` plugin on Gradle `7.6` and later:
+To pick the JVM yourself, set the `javaLauncher` task property to a Java `17` or later. The `javaToolchains` extension needs the `java-base` plugin, or the lighter `jvm-toolchains` plugin on Gradle `7.6` and later:
 
 ```kotlin
 plugins {

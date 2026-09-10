@@ -20,6 +20,7 @@ package org.nosphere.apache.rat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -48,17 +49,18 @@ import org.junit.jupiter.api.io.TempDir;
 
 public abstract class AbstractPluginTest {
 
-    protected final GradleVersion gradleVersion = GradleVersion.version(testedGradleVersion());
+    static final int RAT_JAVA_VERSION = RatTask.RAT_JAVA_VERSION;
 
-    private final boolean configurationCache = isGreaterOrEqualThan(gradleVersion, "6.3");
+    static final JavaVersion RAT_JAVA = JavaVersion.toVersion(RAT_JAVA_VERSION);
+
+    protected final GradleVersion gradleVersion = GradleVersion.version(testedGradleVersion());
 
     @TempDir(cleanup = CleanupMode.NEVER)
     File tmpDir;
 
     @BeforeEach
     public void setup() {
-        System.out.println("Gradle " + gradleVersion + " on Java " + JavaVersion.current()
-                + " with Configuration Cache = " + configurationCache);
+        System.out.println("Gradle " + gradleVersion + " on Java " + JavaVersion.current());
         System.out.println();
         withFile("settings.gradle", "");
     }
@@ -92,10 +94,10 @@ public abstract class AbstractPluginTest {
         withRatBuildScript(Collections.<String>emptyList(), Arrays.asList(taskConfiguration));
     }
 
-    protected void withRatBuildScriptUsingJavaLauncher(String... taskConfiguration) {
+    protected void withRatBuildScriptUsingJavaLauncher(int javaVersion, String... taskConfiguration) {
         List<String> configuration = new ArrayList<>();
         configuration.add("    javaLauncher.set(javaToolchains.launcherFor {"
-                + " it.languageVersion.set(JavaLanguageVersion.of(17)) })");
+                + " it.languageVersion.set(JavaLanguageVersion.of(" + javaVersion + ")) })");
         configuration.addAll(Arrays.asList(taskConfiguration));
         withRatBuildScript(Collections.singletonList("java-base"), configuration);
     }
@@ -130,31 +132,45 @@ public abstract class AbstractPluginTest {
     }
 
     protected BuildResult build(String... arguments) {
-        return gradleRunnerFor(jdk17Home(), arguments).build();
+        return gradleRunnerFor(installedJdkHomes(), true, arguments).build();
     }
 
     protected BuildResult buildAndFail(String... arguments) {
-        return gradleRunnerFor(jdk17Home(), arguments).buildAndFail();
+        return gradleRunnerFor(installedJdkHomes(), true, arguments).buildAndFail();
     }
 
-    protected BuildResult buildWithoutJava17(String... arguments) {
-        return gradleRunnerFor("", arguments).build();
+    protected BuildResult buildWithoutToolchains(String... arguments) {
+        return gradleRunnerFor("", true, arguments).build();
     }
 
-    protected BuildResult buildAndFailWithoutJava17(String... arguments) {
-        return gradleRunnerFor("", arguments).buildAndFail();
+    protected BuildResult buildAndFailWithoutToolchains(String... arguments) {
+        return gradleRunnerFor("", true, arguments).buildAndFail();
     }
 
-    protected static boolean daemonRunsJava17() {
-        return JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17);
+    protected BuildResult buildAndFailWithoutToolchainsNorConfigurationCache(String... arguments) {
+        return gradleRunnerFor("", false, arguments).buildAndFail();
     }
 
-    protected static String jdk17Home() {
-        String home = System.getProperty("ratJdk17Home");
-        if (home == null) {
-            throw new IllegalStateException("System Property `ratJdk17Home` is not set!");
+    protected static boolean daemonRunsRatJavaOrLater() {
+        return JavaVersion.current().isCompatibleWith(RAT_JAVA);
+    }
+
+    protected static String jdkHome(int javaVersion) {
+        return requiredSystemProperty("jdkHome." + javaVersion);
+    }
+
+    protected static String ratJdkHome() {
+        return jdkHome(RAT_JAVA_VERSION);
+    }
+
+    private static String installedJdkHomes() {
+        List<String> homes = new ArrayList<>();
+        for (String name : System.getProperties().stringPropertyNames()) {
+            if (name.startsWith("jdkHome.")) {
+                homes.add(System.getProperty(name));
+            }
         }
-        return home;
+        return String.join(",", homes);
     }
 
     protected TaskOutcome outcomeOf(BuildResult result, String path) {
@@ -170,6 +186,10 @@ public abstract class AbstractPluginTest {
         assertNull(outcomeOf(result, ":rat"));
     }
 
+    protected void assertRatTaskDidNotSucceed(BuildResult result) {
+        assertNotEquals(TaskOutcome.SUCCESS, outcomeOf(result, ":rat"));
+    }
+
     protected void assertOutputContains(BuildResult result, String expected) {
         assertTrue(result.getOutput().contains(expected), () -> "Expected build output to contain: " + expected);
     }
@@ -183,9 +203,10 @@ public abstract class AbstractPluginTest {
         return gradleVersion.compareTo(GradleVersion.version(version)) >= 0;
     }
 
-    private GradleRunner gradleRunnerFor(String javaInstallationPaths, String... arguments) {
+    private GradleRunner gradleRunnerFor(
+            String javaInstallationPaths, boolean configurationCache, String... arguments) {
         List<String> allArguments = new ArrayList<>(Arrays.asList(arguments));
-        allArguments.addAll(extraArguments(javaInstallationPaths));
+        allArguments.addAll(extraArguments(javaInstallationPaths, configurationCache));
         return GradleRunner.create()
                 .withGradleVersion(gradleVersion.getVersion())
                 .withPluginClasspath()
@@ -194,18 +215,30 @@ public abstract class AbstractPluginTest {
                 .withArguments(allArguments);
     }
 
-    private List<String> extraArguments(String javaInstallationPaths) {
+    private List<String> extraArguments(String javaInstallationPaths, boolean configurationCache) {
         List<String> arguments = new ArrayList<>();
         arguments.add("--stacktrace");
         arguments.add("--warning-mode=fail");
-        String toolchainPropertyPrefix = isGreaterOrEqualThan(gradleVersion, "9.7") ? "-D" : "-P";
-        arguments.add(toolchainPropertyPrefix + "org.gradle.java.installations.auto-detect=false");
-        arguments.add(toolchainPropertyPrefix + "org.gradle.java.installations.auto-download=false");
-        arguments.add(toolchainPropertyPrefix + "org.gradle.java.installations.paths=" + javaInstallationPaths);
+        arguments.add(toolchainProperty("auto-detect", "false"));
+        arguments.add(toolchainProperty("auto-download", "false"));
+        arguments.add(toolchainProperty("paths", javaInstallationPaths));
         if (configurationCache) {
             arguments.add("--configuration-cache");
         }
         return arguments;
+    }
+
+    private String toolchainProperty(String name, String value) {
+        String prefix = isGreaterOrEqualThan(gradleVersion, "9.7") ? "-D" : "-P";
+        return prefix + "org.gradle.java.installations." + name + "=" + value;
+    }
+
+    private static String requiredSystemProperty(String name) {
+        String value = System.getProperty(name);
+        if (value == null) {
+            throw new IllegalStateException("System Property `" + name + "` is not set!");
+        }
+        return value;
     }
 
     private static void deleteRecursivelyIgnoringFailures(Path path) {

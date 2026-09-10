@@ -103,8 +103,8 @@ public abstract class RatWork implements WorkAction<RatWorkSpec> {
     }
 
     private static String workerJvm() {
-        return "Apache Rat runs on Java " + System.getProperty("java.version") + " (" + System.getProperty("java.home")
-                + ")";
+        return String.format(
+                "Apache Rat runs on Java %s (%s)", System.getProperty("java.version"), System.getProperty("java.home"));
     }
 
     private static ClaimStatistic runAudit(Reporter reporter) {

@@ -68,6 +68,8 @@ public class RatTask extends DefaultTask implements PatternFilterable {
 
     private static final String RAT_VERSION = "0.18";
 
+    static final int RAT_JAVA_VERSION = 17;
+
     private final PatternSet patternSet = new PatternSet().exclude("**/.gradle/**");
 
     private final ObjectFactory objects;
@@ -120,9 +122,9 @@ public class RatTask extends DefaultTask implements PatternFilterable {
         this.approvedLicenses.set(Collections.<String>emptyList());
 
         this.javaLauncher = objects.property(JavaLauncher.class);
-        if (!JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_17)) {
-            this.javaLauncher.convention(
-                    toolchains.launcherFor(spec -> spec.getLanguageVersion().set(JavaLanguageVersion.of(17))));
+        if (gradleRunsOnJavaOlderThan(RAT_JAVA_VERSION)) {
+            this.javaLauncher.convention(toolchains.launcherFor(
+                    spec -> spec.getLanguageVersion().set(JavaLanguageVersion.of(RAT_JAVA_VERSION))));
         }
 
         this.reportDir = objects.directoryProperty();
@@ -146,6 +148,11 @@ public class RatTask extends DefaultTask implements PatternFilterable {
         return verbose;
     }
 
+    /**
+     * Whether unapproved licenses fail the build, defaults to {@code true}.
+     *
+     * <p>Configuration errors always fail the build, whatever this is set to.
+     */
     @Input
     public Property<Boolean> getFailOnError() {
         return failOnError;
@@ -310,9 +317,23 @@ public class RatTask extends DefaultTask implements PatternFilterable {
         spec.getClasspath().from(ratClasspath);
         JavaLauncher launcher = javaLauncher.getOrNull();
         if (launcher != null) {
+            requireJavaForRat(launcher);
             spec.forkOptions(fork ->
                     fork.setExecutable(launcher.getExecutablePath().getAsFile().getAbsolutePath()));
         }
+    }
+
+    private static void requireJavaForRat(JavaLauncher launcher) {
+        int javaVersion = launcher.getMetadata().getLanguageVersion().asInt();
+        if (javaVersion < RAT_JAVA_VERSION) {
+            throw configurationError("javaLauncher points at Java " + javaVersion + " but Apache Rat " + RAT_VERSION
+                    + " needs Java " + RAT_JAVA_VERSION + " or later. Set javaLauncher to a Java " + RAT_JAVA_VERSION
+                    + " toolchain, or leave it unset.");
+        }
+    }
+
+    private static boolean gradleRunsOnJavaOlderThan(int javaVersion) {
+        return !JavaVersion.current().isCompatibleWith(JavaVersion.toVersion(javaVersion));
     }
 
     private void requireAtLeastOneLicenseMatcher() {

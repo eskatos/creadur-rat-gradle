@@ -4,8 +4,10 @@
 
 - Upgrades the bundled Apache RAT from `0.17` to `0.18`.
 - RAT `0.18` needs Java `17`. Gradle itself may still run on Java `8`: the plugin runs RAT in a separate
-  worker process and picks the JVM for it. A Java `17` must be findable by Gradle, or the build fails.
-- New `javaLauncher` task property to pick the JVM RAT runs on. See the README's "Java for RAT" section.
+  worker process and picks the JVM for it. When Gradle runs on Java `8` to `16`, a JDK `17` must be findable by
+  Gradle, or the build fails.
+- New `javaLauncher` task property to pick the JVM RAT runs on. It must be Java `17` or later. See the README's
+  "Java for RAT" section.
 - The minimum Gradle version changes from `6.0` to `7.0` because of the JVM toolchains requirement.
 
 ### Notable changes in RAT
