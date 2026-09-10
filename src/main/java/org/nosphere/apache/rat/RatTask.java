@@ -66,7 +66,7 @@ import org.gradle.workers.WorkerExecutor;
 @CacheableTask
 public class RatTask extends DefaultTask implements PatternFilterable {
 
-    private static final String RAT_VERSION = "0.17";
+    private static final String RAT_VERSION = "0.18";
 
     private final PatternSet patternSet = new PatternSet().exclude("**/.gradle/**");
 

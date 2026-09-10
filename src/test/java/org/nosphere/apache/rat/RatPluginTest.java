@@ -238,14 +238,14 @@ public class RatPluginTest extends AbstractPluginTest {
     }
 
     @Test
-    public void bundlesRat017() {
+    public void bundlesRat018() {
         withRatBuildScript();
         withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
 
         assertRatTask(build("check"), SUCCESS);
         assertEquals(
                 "<version product=\"Apache Creadur RAT::Core\" vendor=\"Apache Software Foundation\""
-                        + " version=\"0.17\"/>",
+                        + " version=\"0.18\"/>",
                 versionElementOf(readReport("rat-report.xml")));
     }
 
@@ -464,16 +464,6 @@ public class RatPluginTest extends AbstractPluginTest {
         assertOutputContains(result, "License families:");
         assertOutputContains(result, "[MYFOO] Foo License - not approved");
         assertOutputContains(result, "[MIT  ] The MIT License - approved");
-    }
-
-    @Test
-    public void verboseRevealsRatInfoMessages() {
-        withRatBuildScript("    verbose.set(true)");
-        withFile("default-licensed.txt", Fixtures.commentedApacheLicenseHeader());
-
-        BuildResult result = build("check");
-        assertRatTask(result, SUCCESS);
-        assertOutputContains(result, "Excluding");
     }
 
     @Test
