@@ -13,7 +13,7 @@ In your `build.gradle(.kts)` file:
 
 ```kotlin
 plugins {
-    id("org.nosphere.apache.rat") version "0.10.0"
+    id("org.nosphere.apache.rat") version "0.11.0"
 }
 ```
 

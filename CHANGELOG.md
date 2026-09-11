@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.11.0
+## 0.11.0 - 2026-09-11
 
 - Upgrades the bundled Apache RAT from `0.17` to `0.18`.
 - RAT `0.18` needs Java `17`. Gradle itself may still run on Java `8`: the plugin runs RAT in a separate
